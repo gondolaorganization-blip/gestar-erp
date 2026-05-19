@@ -1,0 +1,516 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── MULTI-TENANT ────────────────────────────────────────────────────────────
+
+model Empresa {
+  id          Int       @id @default(autoincrement())
+  ruc         String    @unique               // RUC panameño
+  nombre      String
+  nombreComercial String?
+  direccion   String?
+  telefono    String?
+  email       String?
+  logo        String?
+  moneda      String    @default("USD")       // Panamá es dolarizado
+  activa      Boolean   @default(true)
+  plan        String    @default("TRIAL")   // TRIAL | BASICO | PROFESIONAL | DESPACHO | ENTERPRISE
+  trialVence  DateTime?
+  creadoEn    DateTime  @default(now())
+
+  usuarios             Usuario[]
+  clientes             Cliente[]
+  proveedores          Proveedor[]
+  productos            Producto[]
+  cuentas              CuentaContable[]
+  asientos             Asiento[]
+  facturas             Factura[]
+  pagos                Pago[]
+  ordenesCompra        OrdenCompra[]
+  pagosProveedor       PagoProveedor[]
+  movimientosInventario MovimientoInventario[]
+  empleados            Empleado[]
+  periodosNomina       PeriodoNomina[]
+  lineasNomina         LineaNomina[]
+  leads                Lead[]
+  oportunidades        OportunidadVenta[]
+  actividadesCRM       ActividadCRM[]
+  entidades            Entidad[]
+  contactosCRM         Contacto[]
+
+  @@map("empresas")
+}
+
+// ─── USUARIOS Y ACCESO ───────────────────────────────────────────────────────
+
+model Rol {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique              // ADMIN, CONTADOR, VENDEDOR, LECTOR
+  descripcion String?
+  permisos    Json      @default("{}")       // permisos granulares por módulo
+
+  usuarios    Usuario[]
+
+  @@map("roles")
+}
+
+model Usuario {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  rolId       Int
+  nombre      String
+  email       String    @unique
+  password    String
+  activo       Boolean   @default(true)
+  creadoEn     DateTime  @default(now())
+  ultimoAcceso DateTime?
+  resetToken   String?
+  resetTokenExp DateTime?
+
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  rol         Rol       @relation(fields: [rolId], references: [id])
+
+  @@map("usuarios")
+}
+
+// ─── CATÁLOGOS ───────────────────────────────────────────────────────────────
+
+model Cliente {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  tipoDoc     String    @default("RUC")      // RUC, CEDULA, PASAPORTE
+  numDoc      String
+  nombre      String
+  email       String?
+  telefono    String?
+  direccion   String?
+  activo      Boolean   @default(true)
+  creadoEn    DateTime  @default(now())
+
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  facturas    Factura[]
+
+  @@unique([empresaId, tipoDoc, numDoc])
+  @@map("clientes")
+}
+
+model Proveedor {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  ruc         String?
+  nombre      String
+  email       String?
+  telefono    String?
+  direccion   String?
+  activo      Boolean   @default(true)
+  creadoEn    DateTime  @default(now())
+
+  empresa       Empresa       @relation(fields: [empresaId], references: [id])
+  ordenesCompra OrdenCompra[]
+
+  @@map("proveedores")
+}
+
+model Producto {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  codigo      String
+  nombre      String
+  descripcion String?
+  tipo        String    @default("SERVICIO")  // BIEN, SERVICIO
+  precio      Decimal   @db.Decimal(15, 2)
+  costo       Decimal?  @db.Decimal(15, 2)    // costo de adquisición
+  itbms       Boolean   @default(true)        // aplica ITBMS (7%) en Panamá
+  stock       Decimal   @default(0) @db.Decimal(15, 4)       // existencias actuales
+  stockMinimo Decimal   @default(0) @db.Decimal(15, 4)       // nivel mínimo de alerta
+  activo      Boolean   @default(true)
+  creadoEn    DateTime  @default(now())
+
+  empresa       Empresa   @relation(fields: [empresaId], references: [id])
+  lineasFactura LineaFactura[]
+  lineasOrden   LineaOrdenCompra[]
+  movimientos   MovimientoInventario[]
+
+  @@unique([empresaId, codigo])
+  @@map("productos")
+}
+
+// ─── CONTABILIDAD ────────────────────────────────────────────────────────────
+
+model CuentaContable {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  codigo      String                           // ej: 1.1.01
+  nombre      String
+  tipo        String                           // ACTIVO, PASIVO, PATRIMONIO, INGRESO, GASTO
+  nivel       Int       @default(1)            // jerarquía del plan de cuentas
+  padre       String?                          // código de cuenta padre
+  acepta      Boolean   @default(true)         // acepta movimientos directos
+  creadoEn    DateTime  @default(now())
+
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  lineasAsiento LineaAsiento[]
+
+  @@unique([empresaId, codigo])
+  @@map("cuentas_contables")
+}
+
+model Asiento {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  numero      Int                              // correlativo por empresa
+  fecha       DateTime  @db.Date
+  descripcion String
+  referencia  String?                          // número de factura u otro doc
+  tipo        String    @default("MANUAL")     // MANUAL, AUTOMATICO
+  estado      String    @default("BORRADOR")   // BORRADOR, APROBADO, ANULADO
+  creadoEn    DateTime  @default(now())
+
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  lineas      LineaAsiento[]
+
+  @@unique([empresaId, numero])
+  @@map("asientos")
+}
+
+model LineaAsiento {
+  id          Int       @id @default(autoincrement())
+  asientoId   Int
+  cuentaId    Int
+  descripcion String?
+  debe        Decimal   @default(0) @db.Decimal(15, 2)
+  haber       Decimal   @default(0) @db.Decimal(15, 2)
+
+  asiento     Asiento   @relation(fields: [asientoId], references: [id])
+  cuenta      CuentaContable @relation(fields: [cuentaId], references: [id])
+
+  @@map("lineas_asiento")
+}
+
+// ─── FACTURACIÓN ─────────────────────────────────────────────────────────────
+
+model Factura {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  clienteId   Int
+  numero      String                           // número de factura
+  fecha       DateTime  @db.Date
+  fechaVence  DateTime? @db.Date
+  subtotal    Decimal   @db.Decimal(15, 2)
+  itbms       Decimal   @default(0) @db.Decimal(15, 2)  // 7% ITBMS panameño
+  total       Decimal   @db.Decimal(15, 2)
+  estado      String    @default("PENDIENTE")  // PENDIENTE, PAGADA, ANULADA, VENCIDA
+  notas       String?
+  creadoEn    DateTime  @default(now())
+
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  cliente     Cliente   @relation(fields: [clienteId], references: [id])
+  lineas      LineaFactura[]
+  pagos       Pago[]
+
+  @@unique([empresaId, numero])
+  @@map("facturas")
+}
+
+model LineaFactura {
+  id          Int       @id @default(autoincrement())
+  facturaId   Int
+  productoId  Int?
+  descripcion String
+  cantidad    Decimal   @db.Decimal(15, 4)
+  precioUnit  Decimal   @db.Decimal(15, 2)
+  itbms       Boolean   @default(false)
+  subtotal    Decimal   @db.Decimal(15, 2)
+
+  factura     Factura   @relation(fields: [facturaId], references: [id])
+  producto    Producto? @relation(fields: [productoId], references: [id])
+
+  @@map("lineas_factura")
+}
+
+model Pago {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  facturaId   Int
+  fecha       DateTime  @db.Date
+  monto       Decimal   @db.Decimal(15, 2)
+  metodo      String    @default("EFECTIVO")   // EFECTIVO, TRANSFERENCIA, CHEQUE, TARJETA
+  referencia  String?
+  notas       String?
+  creadoEn    DateTime  @default(now())
+
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  factura     Factura   @relation(fields: [facturaId], references: [id])
+
+  @@map("pagos")
+}
+
+// ─── COMPRAS A PROVEEDORES ───────────────────────────────────────────────────
+
+model OrdenCompra {
+  id            Int       @id @default(autoincrement())
+  empresaId     Int
+  proveedorId   Int
+  numero        String
+  fecha         DateTime  @db.Date
+  fechaVence    DateTime? @db.Date
+  subtotal      Decimal   @db.Decimal(15, 2)
+  itbms         Decimal   @default(0) @db.Decimal(15, 2)
+  total         Decimal   @db.Decimal(15, 2)
+  estado        String    @default("BORRADOR")  // BORRADOR, ENVIADA, RECIBIDA, ANULADA
+  notas         String?
+  creadoEn      DateTime  @default(now())
+
+  empresa       Empresa         @relation(fields: [empresaId],   references: [id])
+  proveedor     Proveedor       @relation(fields: [proveedorId], references: [id])
+  lineas        LineaOrdenCompra[]
+  pagos         PagoProveedor[]
+
+  @@unique([empresaId, numero])
+  @@map("ordenes_compra")
+}
+
+model LineaOrdenCompra {
+  id              Int       @id @default(autoincrement())
+  ordenCompraId   Int
+  productoId      Int?
+  descripcion     String
+  cantidad        Decimal   @db.Decimal(15, 4)
+  precioUnit      Decimal   @db.Decimal(15, 2)
+  itbms           Boolean   @default(false)
+  subtotal        Decimal   @db.Decimal(15, 2)
+
+  ordenCompra     OrdenCompra @relation(fields: [ordenCompraId], references: [id])
+  producto        Producto?   @relation(fields: [productoId],    references: [id])
+
+  @@map("lineas_orden_compra")
+}
+
+model PagoProveedor {
+  id              Int       @id @default(autoincrement())
+  empresaId       Int
+  ordenCompraId   Int
+  fecha           DateTime  @db.Date
+  monto           Decimal   @db.Decimal(15, 2)
+  metodo          String    @default("TRANSFERENCIA")
+  referencia      String?
+  notas           String?
+  creadoEn        DateTime  @default(now())
+
+  empresa         Empresa     @relation(fields: [empresaId],     references: [id])
+  ordenCompra     OrdenCompra @relation(fields: [ordenCompraId], references: [id])
+
+  @@map("pagos_proveedor")
+}
+
+// ─── CRM ─────────────────────────────────────────────────────────────────────
+
+model Entidad {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  nombre      String
+  ruc         String?
+  industria   String?
+  website     String?
+  email       String?
+  telefono    String?
+  direccion   String?
+  notas       String?
+  estado      String    @default("PROSPECTO")   // PROSPECTO, ACTIVO, INACTIVO
+  clienteId   Int?                              // FK lógica al Cliente cuando se convierte
+  creadoEn    DateTime  @default(now())
+
+  empresa       Empresa           @relation(fields: [empresaId], references: [id])
+  contactos     Contacto[]
+  leads         Lead[]
+  oportunidades OportunidadVenta[]
+  actividades   ActividadCRM[]
+
+  @@map("entidades_crm")
+}
+
+model Contacto {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  entidadId   Int
+  nombre      String
+  apellido    String?
+  cargo       String?
+  email       String?
+  telefono    String?
+  notas       String?
+  creadoEn    DateTime  @default(now())
+
+  empresa     Empresa      @relation(fields: [empresaId], references: [id])
+  entidad     Entidad      @relation(fields: [entidadId], references: [id])
+  actividades ActividadCRM[]
+
+  @@map("contactos_crm")
+}
+
+model Lead {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  entidadId   Int?
+  nombre      String
+  apellido    String?
+  email       String?
+  telefono    String?
+  compania    String?                           // empresa del prospecto (antes de crear Entidad)
+  cargo       String?
+  origen      String    @default("MANUAL")      // MANUAL, WEB, REFERIDO, LLAMADA, REDES_SOCIALES
+  estado      String    @default("NUEVO")       // NUEVO, CONTACTADO, CALIFICADO, DESCARTADO
+  notas       String?
+  creadoEn    DateTime  @default(now())
+
+  empresa       Empresa          @relation(fields: [empresaId], references: [id])
+  entidad       Entidad?         @relation(fields: [entidadId], references: [id])
+  oportunidades OportunidadVenta[]
+  actividades   ActividadCRM[]
+
+  @@map("leads")
+}
+
+model OportunidadVenta {
+  id            Int       @id @default(autoincrement())
+  empresaId     Int
+  entidadId     Int?
+  leadId        Int?
+  titulo        String
+  valor         Decimal?  @db.Decimal(15, 2)
+  etapa         String    @default("PROSPECTO")  // PROSPECTO, CALIFICACION, PROPUESTA, NEGOCIACION, CERRADO_GANADO, CERRADO_PERDIDO
+  probabilidad  Int       @default(10)           // 0-100
+  fechaCierre   DateTime? @db.Date
+  notas         String?
+  creadoEn      DateTime  @default(now())
+  actualizadoEn DateTime  @updatedAt
+
+  empresa     Empresa          @relation(fields: [empresaId], references: [id])
+  entidad     Entidad?         @relation(fields: [entidadId], references: [id])
+  lead        Lead?            @relation(fields: [leadId],    references: [id])
+  actividades ActividadCRM[]
+
+  @@map("oportunidades_venta")
+}
+
+model ActividadCRM {
+  id             Int       @id @default(autoincrement())
+  empresaId      Int
+  entidadId      Int?
+  contactoId     Int?
+  leadId         Int?
+  oportunidadId  Int?
+  tipo           String                           // LLAMADA, EMAIL, REUNION, NOTA, TAREA
+  titulo         String
+  descripcion    String?
+  fecha          DateTime  @db.Date
+  completada     Boolean   @default(false)
+  creadoEn       DateTime  @default(now())
+
+  empresa     Empresa           @relation(fields: [empresaId],     references: [id])
+  entidad     Entidad?          @relation(fields: [entidadId],     references: [id])
+  contacto    Contacto?         @relation(fields: [contactoId],    references: [id])
+  lead        Lead?             @relation(fields: [leadId],        references: [id])
+  oportunidad OportunidadVenta? @relation(fields: [oportunidadId], references: [id])
+
+  @@map("actividades_crm")
+}
+
+// ─── NÓMINA ──────────────────────────────────────────────────────────────────
+
+model Empleado {
+  id              Int       @id @default(autoincrement())
+  empresaId       Int
+  cedula          String                            // cédula panameña
+  nombre          String
+  apellido        String
+  email           String?
+  telefono        String?
+  cargo           String
+  departamento    String?
+  fechaIngreso    DateTime  @db.Date
+  tipoContrato    String    @default("INDEFINIDO")  // INDEFINIDO, DEFINIDO, TEMPORAL
+  salarioMensual  Decimal   @db.Decimal(15, 2)
+  periodoPago     String    @default("QUINCENAL")   // QUINCENAL, MENSUAL
+  activo          Boolean   @default(true)
+  creadoEn        DateTime  @default(now())
+
+  empresa         Empresa       @relation(fields: [empresaId], references: [id])
+  lineasNomina    LineaNomina[]
+
+  @@unique([empresaId, cedula])
+  @@map("empleados")
+}
+
+model PeriodoNomina {
+  id              Int       @id @default(autoincrement())
+  empresaId       Int
+  numero          String                            // ej: "2025-Q01"
+  tipo            String    @default("REGULAR")     // REGULAR, DECIMO
+  fechaInicio     DateTime  @db.Date
+  fechaFin        DateTime  @db.Date
+  fechaPago       DateTime  @db.Date
+  estado          String    @default("BORRADOR")    // BORRADOR, APROBADO, PAGADO
+  totalBruto      Decimal   @default(0) @db.Decimal(15, 2)
+  totalDeduccion  Decimal   @default(0) @db.Decimal(15, 2)
+  totalPatrono    Decimal   @default(0) @db.Decimal(15, 2)
+  totalNeto       Decimal   @default(0) @db.Decimal(15, 2)
+  notas           String?
+  creadoEn        DateTime  @default(now())
+
+  empresa         Empresa       @relation(fields: [empresaId], references: [id])
+  lineas          LineaNomina[]
+
+  @@unique([empresaId, numero])
+  @@map("periodos_nomina")
+}
+
+model LineaNomina {
+  id              Int       @id @default(autoincrement())
+  periodoId       Int
+  empleadoId      Int
+  empresaId       Int
+  salarioBruto    Decimal   @db.Decimal(15, 2)
+  otrosIngresos   Decimal   @default(0) @db.Decimal(15, 2)  // bonos, horas extra, comisiones
+  cssEmpleado     Decimal   @db.Decimal(15, 2)    // 9.75 %
+  seaEmpleado     Decimal   @db.Decimal(15, 2)    // 1.25 %
+  isr             Decimal   @default(0) @db.Decimal(15, 2)
+  otrosDescuentos Decimal   @default(0) @db.Decimal(15, 2)
+  totalDeduccion  Decimal   @db.Decimal(15, 2)
+  salarioNeto     Decimal   @db.Decimal(15, 2)
+  cssPatrono      Decimal   @db.Decimal(15, 2)    // 12.25 %
+  seaPatrono      Decimal   @db.Decimal(15, 2)    // 1.5 %
+  notas           String?
+
+  periodo         PeriodoNomina @relation(fields: [periodoId],   references: [id])
+  empleado        Empleado      @relation(fields: [empleadoId],  references: [id])
+  empresa         Empresa       @relation(fields: [empresaId],   references: [id])
+
+  @@map("lineas_nomina")
+}
+
+// ─── INVENTARIO ──────────────────────────────────────────────────────────────
+
+model MovimientoInventario {
+  id          Int       @id @default(autoincrement())
+  empresaId   Int
+  productoId  Int
+  tipo        String                           // ENTRADA, SALIDA, AJUSTE
+  cantidad    Decimal   @db.Decimal(15, 4)     // positivo siempre; tipo indica dirección
+  costoUnit   Decimal?  @db.Decimal(15, 2)     // costo unitario en ese movimiento
+  saldoPost   Decimal   @db.Decimal(15, 4)     // stock resultante tras el movimiento
+  referencia  String?                          // número de OC, factura, etc.
+  notas       String?
+  creadoEn    DateTime  @default(now())
+
+  empresa     Empresa   @relation(fields: [empresaId],  references: [id])
+  producto    Producto  @relation(fields: [productoId], references: [id])
+
+  @@map("movimientos_inventario")
+}
