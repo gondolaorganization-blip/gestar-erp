@@ -184,6 +184,24 @@ export default function GestarERPLanding() {
         .toggle-track.on { background: var(--green); }
         .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
         .toggle-track.on .toggle-thumb { left: 23px; }
+        /* ── Responsive ─────────────────────────────────────────── */
+        @media (max-width: 767px) {
+          nav { padding-left: 20px !important; padding-right: 20px !important; }
+          section { padding-left: 20px !important; padding-right: 20px !important; }
+          footer { padding-left: 20px !important; padding-right: 20px !important; flex-direction: column !important; align-items: flex-start !important; }
+          .lp-nav-links { display: none !important; }
+          .lp-nav-login { display: none !important; }
+          .lp-hero-btns { flex-direction: column !important; align-items: stretch !important; }
+          .lp-hero-btns button, .lp-hero-btns a { width: 100% !important; text-align: center !important; justify-content: center !important; }
+          .lp-grid-3, .lp-grid-4 { grid-template-columns: 1fr !important; }
+          .lp-grid-dash { grid-template-columns: repeat(2,1fr) !important; }
+          .lp-cta-h2 { font-size: clamp(26px, 7vw, 36px) !important; line-height: 1.15 !important; }
+          .lp-footer-links { gap: 14px !important; flex-wrap: wrap !important; }
+        }
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .lp-grid-3, .lp-grid-4 { grid-template-columns: repeat(2,1fr) !important; }
+          .lp-grid-dash { grid-template-columns: repeat(2,1fr) !important; }
+        }
       `}</style>
 
       {/* NAVBAR */}
@@ -215,7 +233,7 @@ export default function GestarERPLanding() {
             </span>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
+        <div className="lp-nav-links" style={{ display: "flex", gap: 32, alignItems: "center" }}>
           {["Funciones", "Precios", "FAQ"].map(item => (
             <a key={item} href={`#${item.toLowerCase()}`} style={{ fontSize: 14, fontWeight: 600, color: "#4B5563", textDecoration: "none", transition: "color 0.15s" }}
               onMouseEnter={e => e.target.style.color = "#00C896"}
@@ -224,7 +242,7 @@ export default function GestarERPLanding() {
           ))}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn-outline" style={{ padding: "9px 20px", fontSize: 13 }} onClick={() => navigate("/login")}>Iniciar sesión</button>
+          <button className="btn-outline lp-nav-login" style={{ padding: "9px 20px", fontSize: 13 }} onClick={() => navigate("/login")}>Iniciar sesión</button>
           <button className="btn-primary" style={{ padding: "9px 20px", fontSize: 13 }} onClick={scrollToPricing}>Ver planes</button>
         </div>
       </nav>
@@ -272,7 +290,7 @@ export default function GestarERPLanding() {
             Facturación electrónica DGI, nómina con CSS integrado, contabilidad local y asistente IA financiero — todo en un sistema diseñado para la realidad empresarial panameña.
           </p>
 
-          <div className="fade-up" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", animationDelay: "0.3s" }}>
+          <div className="fade-up lp-hero-btns" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", animationDelay: "0.3s" }}>
             <button className="btn-primary" style={{ fontSize: 16, padding: "15px 36px" }} onClick={scrollToPricing}>
               Empezar gratis — 14 días sin costo
             </button>
@@ -303,7 +321,7 @@ export default function GestarERPLanding() {
                 <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "'DM Mono', monospace" }}>app.gestarconsultores.com/erp</span>
               </div>
             </div>
-            <div style={{ padding: 20, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
+            <div className="lp-grid-dash" style={{ padding: 20, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
               {[
                 { l: "Ingresos", v: "B/. 48,720", c: "#00C896" },
                 { l: "Gastos", v: "B/. 21,340", c: "#FF6B6B" },
@@ -333,7 +351,7 @@ export default function GestarERPLanding() {
             </h2>
             <p style={{ fontSize: 16, color: "#6B7280", maxWidth: 500, margin: "0 auto" }}>Sin módulos genéricos de otros países. Cada función pensada para la legislación, bancos e impuestos de Panamá.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+          <div className="lp-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
             {FEATURES.map(f => (
               <div key={f.title} className="feature-card" style={{
                 background: "#F0F2F8", borderRadius: 14, padding: "28px 24px",
@@ -376,7 +394,7 @@ export default function GestarERPLanding() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, alignItems: "start" }}>
+          <div className="lp-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, alignItems: "start" }}>
             {PLANS.map(plan => (
               <div key={plan.id} className="plan-card" style={{
                 background: plan.popular ? "#fff" : "rgba(255,255,255,0.04)",
@@ -463,7 +481,7 @@ export default function GestarERPLanding() {
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <h2 style={{ fontSize: 36, fontWeight: 900, color: "#0D1B2A", letterSpacing: "-0.025em" }}>Lo que dicen nuestros clientes</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+          <div className="lp-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
             {TESTIMONIALS.map(t => (
               <div key={t.name} style={{ background: "#fff", borderRadius: 16, padding: 28, border: "1px solid #E5E7EB", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 20, color: "#00C896", marginBottom: 12, letterSpacing: 2 }}>★★★★★</div>
@@ -516,7 +534,7 @@ export default function GestarERPLanding() {
       }}>
         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,200,150,0.08) 0%, transparent 70%)", filter: "blur(40px)" }} />
         <div style={{ position: "relative", zIndex: 1, maxWidth: 600, margin: "0 auto" }}>
-          <h2 style={{ fontSize: 44, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 16 }}>
+          <h2 className="lp-cta-h2" style={{ fontSize: 44, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 16 }}>
             Listo para modernizar<br />tu empresa
           </h2>
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", marginBottom: 36, lineHeight: 1.7 }}>
@@ -535,7 +553,7 @@ export default function GestarERPLanding() {
           <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #00C896, #1A6BF5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff" }}>G</div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>Gestar ERP · GestarSoft</span>
         </div>
-        <div style={{ display: "flex", gap: 24 }}>
+        <div className="lp-footer-links" style={{ display: "flex", gap: 24 }}>
           <a href="https://gestarsoft.com" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Términos</a>
           <a href="https://gestarsoft.com" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Privacidad</a>
           <a href="https://wa.me/50765143637" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Soporte</a>
