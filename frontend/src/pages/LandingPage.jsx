@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const PLANS = [
   {
@@ -97,8 +97,7 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q: "¿Está conectado a la DGI de Panamá?", a: "Sí. Gestar ERP utiliza un PAC autorizado para emitir facturas electrónicas con CAE/CUFE válido ante la DGI. Cumple con todas las resoluciones vigentes." },
-  { q: "¿Puedo migrar desde QuickBooks o Peachtree?", a: "Sí. Ofrecemos migración de datos asistida sin costo adicional en los planes Despacho y Enterprise. Para Básico y Profesional el costo es B/. 299." },
+  { q: "¿Está conectado a la DGI de Panamá?", a: "La integración directa con la DGI para facturación electrónica con CAE/CUFE está en desarrollo y próximamente disponible. Actualmente puedes emitir y gestionar tus facturas dentro del sistema y exportarlas para su presentación." },
   { q: "¿Hay un período de prueba gratuito?", a: "Sí. Todos los planes incluyen 14 días de prueba gratuita sin necesidad de tarjeta de crédito. Al finalizar el período puedes elegir tu plan o contactarnos." },
   { q: "¿Cómo funcionan los pagos?", a: "Aceptamos tarjeta de crédito/débito (Visa, Mastercard), Yappy y transferencia bancaria. Los pagos anuales tienen 20% de descuento aplicado automáticamente." },
   { q: "¿Hay contrato de permanencia?", a: "No. Todos los planes son mes a mes. Puedes cancelar cuando quieras sin penalidad. El plan anual se cobra por adelantado." },
@@ -117,9 +116,6 @@ export default function GestarERPLanding() {
   const navigate = useNavigate();
   const [annual, setAnnual] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [payModal, setPayModal] = useState(false);
-  const [payMethod, setPayMethod] = useState("card");
   const [scrolled, setScrolled] = useState(false);
   const pricingRef = useRef(null);
 
@@ -130,11 +126,6 @@ export default function GestarERPLanding() {
   }, []);
 
   const scrollToPricing = () => pricingRef.current?.scrollIntoView({ behavior: "smooth" });
-
-  const openPayment = (plan) => {
-    setSelectedPlan(plan);
-    setPayModal(true);
-  };
 
   return (
     <div style={{ fontFamily: "'Cabinet Grotesk', 'Outfit', sans-serif", background: "#F7F8FC", color: "#111827", overflowX: "hidden" }}>
@@ -204,16 +195,25 @@ export default function GestarERPLanding() {
         padding: "16px 48px", display: "flex", alignItems: "center", justifyContent: "space-between",
         transition: "all 0.25s ease",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #00C896 0%, #1A6BF5 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16, fontWeight: 900, color: "#fff",
-          }}>G</div>
-          <span style={{ fontSize: 18, fontWeight: 800, color: "#0D1B2A", letterSpacing: "-0.02em" }}>
-            Gestar <span style={{ color: "#00C896" }}>ERP</span>
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <a href="https://gestarsoft.com" style={{
+            fontSize: 12, fontWeight: 600, color: "#6B7280", textDecoration: "none",
+            display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s",
+          }}
+            onMouseEnter={e => e.target.style.color = "#00C896"}
+            onMouseLeave={e => e.target.style.color = "#6B7280"}
+          >← GestarSoft</a>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "linear-gradient(135deg, #00C896 0%, #1A6BF5 100%)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, fontWeight: 900, color: "#fff",
+            }}>G</div>
+            <span style={{ fontSize: 18, fontWeight: 800, color: "#0D1B2A", letterSpacing: "-0.02em" }}>
+              Gestar <span style={{ color: "#00C896" }}>ERP</span>
+            </span>
+          </div>
         </div>
         <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
           {["Funciones", "Precios", "FAQ"].map(item => (
@@ -225,7 +225,6 @@ export default function GestarERPLanding() {
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn-outline" style={{ padding: "9px 20px", fontSize: 13 }} onClick={() => navigate("/login")}>Iniciar sesión</button>
-          <button className="btn-outline" style={{ padding: "9px 20px", fontSize: 13 }} onClick={() => navigate("/registro")}>Crear cuenta</button>
           <button className="btn-primary" style={{ padding: "9px 20px", fontSize: 13 }} onClick={scrollToPricing}>Ver planes</button>
         </div>
       </nav>
@@ -409,7 +408,7 @@ export default function GestarERPLanding() {
                 </div>
                 <button
                   className="btn-primary"
-                  onClick={() => openPayment(plan)}
+                  onClick={() => navigate(`/registro?plan=${plan.id}`)}
                   style={{
                     width: "100%", marginBottom: 24, fontSize: 13,
                     background: plan.popular ? "#00C896" : "rgba(255,255,255,0.08)",
@@ -440,15 +439,20 @@ export default function GestarERPLanding() {
           </div>
 
           <div style={{ textAlign: "center", marginTop: 40 }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>Métodos de pago aceptados</p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              {["💳 Visa / Mastercard", "📱 Yappy", "🏦 ACH Panamá", "💲 Stripe", "🅿️ PayPal"].map(m => (
-                <div key={m} style={{
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 14, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>Métodos de pago</p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 10 }}>
+              {[{ label: "🅿️ PayPal", note: "Principal" }, { label: "📱 Yappy", note: "Contáctenos" }, { label: "🏦 ACH Panamá", note: "Contáctenos" }].map(m => (
+                <div key={m.label} style={{
                   background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500,
-                }}>{m}</div>
+                  borderRadius: 8, padding: "8px 16px", fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500,
+                  textAlign: "center",
+                }}>
+                  <div>{m.label}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>{m.note}</div>
+                </div>
               ))}
             </div>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>El pago se configura dentro de la plataforma vía PayPal al finalizar el registro.</p>
           </div>
         </div>
       </section>
@@ -529,123 +533,17 @@ export default function GestarERPLanding() {
       <footer style={{ background: "#060C14", padding: "40px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #00C896, #1A6BF5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff" }}>G</div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>Gestar ERP · Gestar Consultores</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>Gestar ERP · GestarSoft</span>
         </div>
         <div style={{ display: "flex", gap: 24 }}>
-          <Link to="/terminos"   style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Términos</Link>
-          <Link to="/privacidad" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Privacidad</Link>
-          <a href="mailto:soporte@gestar-erp.com" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Soporte</a>
-          <a href="https://wa.me/50700000000" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>WhatsApp</a>
+          <a href="https://gestarsoft.com" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Términos</a>
+          <a href="https://gestarsoft.com" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Privacidad</a>
+          <a href="https://wa.me/50765143637" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>Soporte</a>
+          <a href="https://www.linkedin.com/company/gestarsoft" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textDecoration: "none", fontWeight: 500 }}>LinkedIn</a>
         </div>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>© 2025 Gestar Consultores · Torre Banesco, Piso 19, Panamá</span>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>© 2026 GestarSoft · Ciudad de Panamá, República de Panamá</span>
       </footer>
 
-      {/* PAYMENT MODAL */}
-      {payModal && selectedPlan && (
-        <div className="modal-overlay" onClick={() => setPayModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: "#fff", borderRadius: 20, padding: 36, width: "100%", maxWidth: 480,
-            boxShadow: "0 40px 120px rgba(0,0,0,0.3)", margin: 16,
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-              <div>
-                <div style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Suscripción</div>
-                <h3 style={{ fontSize: 22, fontWeight: 900, color: "#0D1B2A" }}>Plan {selectedPlan.name}</h3>
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#00C896", fontFamily: "'DM Mono', monospace", marginTop: 4 }}>
-                  B/. {annual ? selectedPlan.annual : selectedPlan.price}<span style={{ fontSize: 14, color: "#9CA3AF", fontWeight: 400 }}>/mes</span>
-                </div>
-              </div>
-              <button onClick={() => setPayModal(false)} style={{ background: "#F3F4F6", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 16, color: "#6B7280" }}>✕</button>
-            </div>
-
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Método de pago</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                {[
-                  { id: "card", label: "💳 Tarjeta", sub: "Visa / MC" },
-                  { id: "yappy", label: "📱 Yappy", sub: "Instantáneo" },
-                  { id: "ach", label: "🏦 ACH", sub: "Transferencia" },
-                ].map(m => (
-                  <div
-                    key={m.id}
-                    className="pay-method"
-                    onClick={() => setPayMethod(m.id)}
-                    style={{
-                      border: `2px solid ${payMethod === m.id ? "#00C896" : "#E5E7EB"}`,
-                      background: payMethod === m.id ? "#E6FAF5" : "#fff",
-                      padding: "12px 8px", textAlign: "center", cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ fontSize: 16, marginBottom: 3 }}>{m.label.split(" ")[0]}</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: payMethod === m.id ? "#00A87E" : "#4B5563" }}>{m.label.split(" ").slice(1).join(" ")}</div>
-                    <div style={{ fontSize: 9, color: "#9CA3AF" }}>{m.sub}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {payMethod === "card" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
-                {[
-                  { label: "Nombre completo", placeholder: "Como aparece en la tarjeta" },
-                  { label: "Número de tarjeta", placeholder: "•••• •••• •••• ••••" },
-                ].map(f => (
-                  <div key={f.label}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</div>
-                    <input placeholder={f.placeholder} style={{
-                      width: "100%", padding: "11px 14px", border: "1.5px solid #E5E7EB",
-                      borderRadius: 8, fontSize: 14, color: "#111827", fontFamily: "'Outfit', sans-serif",
-                      outline: "none",
-                    }} />
-                  </div>
-                ))}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {[{ label: "Vencimiento", placeholder: "MM / AA" }, { label: "CVV", placeholder: "•••" }].map(f => (
-                    <div key={f.label}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</div>
-                      <input placeholder={f.placeholder} style={{
-                        width: "100%", padding: "11px 14px", border: "1.5px solid #E5E7EB",
-                        borderRadius: 8, fontSize: 14, color: "#111827", fontFamily: "'Outfit', sans-serif", outline: "none",
-                      }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {payMethod === "yappy" && (
-              <div style={{ textAlign: "center", padding: "24px 0 20px", border: "1.5px dashed #E5E7EB", borderRadius: 12, marginBottom: 20 }}>
-                <div style={{ fontSize: 40, marginBottom: 8 }}>📱</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#0D1B2A", marginBottom: 4 }}>Pago por Yappy</div>
-                <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>Al confirmar, recibirás un enlace de pago<br />Yappy en tu WhatsApp registrado.</div>
-              </div>
-            )}
-
-            {payMethod === "ach" && (
-              <div style={{ background: "#F9FAFB", borderRadius: 12, padding: "16px 18px", marginBottom: 20, border: "1px solid #E5E7EB" }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10 }}>Datos para transferencia ACH:</div>
-                {[["Banco", "Banco General"], ["Cuenta", "04-78-01-123456-7"], ["Beneficiario", "Gestar Consultores S.A."], ["Referencia", `GERP-${selectedPlan.id.toUpperCase()}`]].map(([k, v]) => (
-                  <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                    <span style={{ fontSize: 11, color: "#9CA3AF" }}>{k}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#111827", fontFamily: "'DM Mono', monospace" }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <button
-              className="btn-primary"
-              style={{ width: "100%", fontSize: 15, padding: "14px" }}
-              onClick={() => navigate(`/registro?plan=${selectedPlan.id}`)}
-            >
-              {payMethod === "yappy" ? "Enviar enlace Yappy →" : payMethod === "ach" ? "Confirmar y crear cuenta →" : `Continuar con plan ${selectedPlan.name} →`}
-            </button>
-            <p style={{ textAlign: "center", fontSize: 11, color: "#9CA3AF", marginTop: 12 }}>
-              🔒 Pago seguro · Sin contratos · Cancela cuando quieras
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
