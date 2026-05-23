@@ -45,6 +45,7 @@ model Empresa {
   entidades            Entidad[]
   contactosCRM         Contacto[]
   adjuntos             Adjunto[]
+  usuariosAcceso       UsuarioEmpresa[]
 
   @@map("empresas")
 }
@@ -57,7 +58,8 @@ model Rol {
   descripcion String?
   permisos    Json      @default("{}")       // permisos granulares por módulo
 
-  usuarios    Usuario[]
+  usuarios        Usuario[]
+  usuarioEmpresas UsuarioEmpresa[]
 
   @@map("roles")
 }
@@ -75,10 +77,28 @@ model Usuario {
   resetToken   String?
   resetTokenExp DateTime?
 
-  empresa     Empresa   @relation(fields: [empresaId], references: [id])
-  rol         Rol       @relation(fields: [rolId], references: [id])
+  empresa         Empresa          @relation(fields: [empresaId], references: [id])
+  rol             Rol              @relation(fields: [rolId], references: [id])
+  empresasAcceso  UsuarioEmpresa[]
 
   @@map("usuarios")
+}
+
+// ─── MULTI-EMPRESA ───────────────────────────────────────────────────────────
+
+model UsuarioEmpresa {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int
+  empresaId   Int
+  rolId       Int
+  creadoEn    DateTime  @default(now())
+
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  empresa     Empresa   @relation(fields: [empresaId], references: [id])
+  rol         Rol       @relation(fields: [rolId],     references: [id])
+
+  @@unique([usuarioId, empresaId])
+  @@map("usuario_empresas")
 }
 
 // ─── CATÁLOGOS ───────────────────────────────────────────────────────────────

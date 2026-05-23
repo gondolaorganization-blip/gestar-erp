@@ -85,6 +85,7 @@ const importacionRoutes     = require('./routes/importacion.routes');
 const backupRoutes          = require('./routes/backup.routes');
 const adminRoutes           = require('./routes/admin.routes');
 const paypalRoutes          = require('./routes/paypal.routes');
+const empresasRoutes        = require('./routes/empresas.routes');
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/admin',        adminRoutes);
@@ -110,6 +111,7 @@ app.use('/api/impuestos',            impuestosRoutes);
 app.use('/api/importacion-bancaria', importacionRoutes);
 app.use('/api/backup',               backupRoutes);
 app.use('/api/paypal',               paypalRoutes);
+app.use('/api/empresas',             empresasRoutes);
 
 // ─── RAÍZ E HEALTH CHECK ─────────────────────────────────────────────────────
 

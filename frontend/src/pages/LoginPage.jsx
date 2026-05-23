@@ -16,6 +16,7 @@ export default function LoginPage() {
       const { data } = await api.post("/auth/login", form);
       localStorage.setItem("token", data.token);
       localStorage.setItem("usuario", JSON.stringify(data.usuario));
+      localStorage.setItem("empresa", JSON.stringify(data.empresa));
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Credenciales incorrectas");

@@ -258,6 +258,7 @@ export default function RegistroPage() {
       const { data } = await api.post("/auth/registro", payload);
       localStorage.setItem("token", data.token);
       localStorage.setItem("usuario", JSON.stringify(data.usuario));
+      localStorage.setItem("empresa", JSON.stringify(data.empresa));
       setEmpresaCreada(data.empresa.nombre);
       setStep(2);
       return null;

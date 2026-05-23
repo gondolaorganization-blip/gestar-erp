@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
@@ -181,11 +181,192 @@ function DonutChart({ value = 0 }) {
 
 const estadoColor = { Pagada: "#00C896", Pendiente: "#F5A623", Vencida: "#FF6B6B", Anulada: "#6B7A99" };
 
+// ── Modal: Nueva Empresa ──────────────────────────────────────────────────────
+
+function ModalNuevaEmpresa({ onClose, onCreada }) {
+  const [form, setForm] = useState({ ruc: "", nombre: "", nombreComercial: "", direccion: "", telefono: "", email: "" });
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState(null);
+  const c = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function crear() {
+    setError(null);
+    if (!form.ruc.trim() || !form.nombre.trim()) { setError("RUC y nombre son requeridos"); return; }
+    setGuardando(true);
+    try {
+      const { data } = await api.post("/empresas", { empresa: form });
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("empresa", JSON.stringify(data.empresa));
+      onCreada();
+    } catch (e) {
+      setError(e.response?.data?.error || "Error al crear la empresa");
+    } finally { setGuardando(false); }
+  }
+
+  const ovSt = { position: "fixed", inset: 0, background: "rgba(0,0,0,.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 };
+  const mdSt = { background: "#111620", border: "1px solid rgba(78,154,241,0.2)", borderRadius: 16, padding: 28, width: "100%", maxWidth: 480, color: "#E8EDFF" };
+  const lbSt = { display: "block", fontSize: 12, fontWeight: 600, color: "#6B7A99", marginBottom: 5 };
+  const inSt = { display: "block", width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 14, color: "#E8EDFF", marginBottom: 12, boxSizing: "border-box" };
+
+  return (
+    <div style={ovSt}>
+      <div style={mdSt}>
+        <h3 style={{ margin: "0 0 18px", fontSize: 16, fontWeight: 800 }}>Nueva empresa</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 12px" }}>
+          <div>
+            <label style={lbSt}>RUC *</label>
+            <input style={inSt} value={form.ruc} onChange={(e) => c("ruc", e.target.value)} placeholder="8-123-456" />
+          </div>
+          <div>
+            <label style={lbSt}>Nombre legal *</label>
+            <input style={inSt} value={form.nombre} onChange={(e) => c("nombre", e.target.value)} placeholder="Empresa S.A." />
+          </div>
+        </div>
+        <label style={lbSt}>Nombre comercial</label>
+        <input style={inSt} value={form.nombreComercial} onChange={(e) => c("nombreComercial", e.target.value)} placeholder="Opcional" />
+        <label style={lbSt}>Dirección</label>
+        <input style={inSt} value={form.direccion} onChange={(e) => c("direccion", e.target.value)} placeholder="Ciudad de Panamá" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 12px" }}>
+          <div>
+            <label style={lbSt}>Teléfono</label>
+            <input style={inSt} value={form.telefono} onChange={(e) => c("telefono", e.target.value)} placeholder="6000-0000" />
+          </div>
+          <div>
+            <label style={lbSt}>Email</label>
+            <input style={inSt} value={form.email} onChange={(e) => c("email", e.target.value)} placeholder="info@empresa.com" />
+          </div>
+        </div>
+        {error && <p style={{ color: "#FF6B6B", fontSize: 12, margin: "0 0 10px" }}>{error}</p>}
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", color: "#E8EDFF", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 13 }}>Cancelar</button>
+          <button onClick={crear} disabled={guardando} style={{ background: "#4E9AF1", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
+            {guardando ? "Creando…" : "Crear empresa"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── EmpresaSwitcher ───────────────────────────────────────────────────────────
+
+function EmpresaSwitcher({ empresaActual, onCambiada }) {
+  const [open, setOpen]       = useState(false);
+  const [empresas, setEmpresas] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [modalNueva, setModalNueva] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function cerrar(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", cerrar);
+    return () => document.removeEventListener("mousedown", cerrar);
+  }, []);
+
+  async function abrir() {
+    setOpen((o) => !o);
+    if (!open) {
+      setCargando(true);
+      try {
+        const { data } = await api.get("/empresas");
+        setEmpresas(data);
+      } catch { /* noop */ }
+      finally { setCargando(false); }
+    }
+  }
+
+  async function cambiar(id) {
+    if (id === empresaActual?.id) { setOpen(false); return; }
+    try {
+      const { data } = await api.post(`/auth/cambiar-empresa/${id}`);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("empresa", JSON.stringify(data.empresa));
+      setOpen(false);
+      onCambiada();
+    } catch { alert("No se pudo cambiar de empresa"); }
+  }
+
+  return (
+    <>
+      <div ref={ref} style={{ position: "relative" }}>
+        <button
+          onClick={abrir}
+          title="Cambiar empresa"
+          style={{
+            background: "rgba(78,154,241,0.10)", border: "1px solid rgba(78,154,241,0.2)",
+            borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#4E9AF1",
+            fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+            fontFamily: "'Syne', sans-serif",
+          }}
+        >
+          <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {empresaActual?.nombre ?? "Empresa"}
+          </span>
+          <span style={{ fontSize: 9 }}>▾</span>
+        </button>
+
+        {open && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 999,
+            background: "#111620", border: "1px solid rgba(78,154,241,0.2)",
+            borderRadius: 12, minWidth: 220, boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            overflow: "hidden",
+          }}>
+            <div style={{ padding: "8px 0" }}>
+              {cargando ? (
+                <div style={{ padding: "12px 16px", fontSize: 12, color: "#4B5675" }}>Cargando…</div>
+              ) : (
+                empresas.map((e) => (
+                  <button
+                    key={e.id}
+                    onClick={() => cambiar(e.id)}
+                    style={{
+                      display: "block", width: "100%", textAlign: "left",
+                      padding: "9px 16px", background: e.esActiva ? "rgba(78,154,241,0.12)" : "none",
+                      border: "none", color: e.esActiva ? "#4E9AF1" : "#C8D0E8",
+                      cursor: "pointer", fontSize: 12, fontFamily: "'Syne', sans-serif",
+                      borderLeft: e.esActiva ? "3px solid #4E9AF1" : "3px solid transparent",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700 }}>{e.nombre}</div>
+                    <div style={{ fontSize: 10, color: "#4B5675", marginTop: 1 }}>{e.ruc} · {e.plan}</div>
+                  </button>
+                ))
+              )}
+            </div>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "8px 0" }}>
+              <button
+                onClick={() => { setOpen(false); setModalNueva(true); }}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "9px 16px", background: "none", border: "none",
+                  color: "#00C896", cursor: "pointer", fontSize: 12,
+                  fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                }}
+              >
+                + Nueva empresa
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {modalNueva && (
+        <ModalNuevaEmpresa
+          onClose={() => setModalNueva(false)}
+          onCreada={() => { setModalNueva(false); onCambiada(); }}
+        />
+      )}
+    </>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function ERPPanama() {
   const navigate = useNavigate();
-  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+  const usuario  = JSON.parse(localStorage.getItem("usuario") || "{}");
+  const [empresa, setEmpresa] = useState(() => JSON.parse(localStorage.getItem("empresa") || "null"));
 
   const [activeNav, setActiveNav] = useState("dashboard");
   const isMobile = () => window.innerWidth < 768;
@@ -283,7 +464,13 @@ export default function ERPPanama() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
+    localStorage.removeItem("empresa");
     navigate("/login");
+  };
+
+  const handleEmpresaCambiada = () => {
+    setEmpresa(JSON.parse(localStorage.getItem("empresa") || "null"));
+    window.location.reload();
   };
 
   const sendAI = async () => {
@@ -480,11 +667,11 @@ export default function ERPPanama() {
               {activeNav === "reportes" && "Reportes & Analytics"}
             </h1>
             <p style={{ fontSize: 12, color: "#4B5675", marginTop: 2 }}>
-              {new Date().toLocaleString("es-PA", { month: "long", year: "numeric" })} · {usuario.empresa ?? "Gestar Consultores"}
+              {new Date().toLocaleString("es-PA", { month: "long", year: "numeric" })} · {empresa?.nombre ?? "Gestar Consultores"}
             </p>
           </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {alertasUrgentes > 0 && (
               <div style={{
                 background: "#FF6B6B22", border: "1px solid #FF6B6B44", borderRadius: 20,
@@ -493,6 +680,7 @@ export default function ERPPanama() {
                 ⚠ {alertasUrgentes} alertas
               </div>
             )}
+            <EmpresaSwitcher empresaActual={empresa} onCambiada={handleEmpresaCambiada} />
             <div style={{
               background: "rgba(78,154,241,0.12)", border: "1px solid rgba(78,154,241,0.2)",
               borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#4E9AF1", fontWeight: 600, cursor: "pointer",

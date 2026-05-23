@@ -79,6 +79,11 @@ async function registro(req, res) {
         },
       });
 
+      // Vincular usuario a su empresa en la tabla multi-empresa
+      await tx.usuarioEmpresa.create({
+        data: { usuarioId: nuevoUsuario.id, empresaId: nuevaEmpresa.id, rolId: rolAdmin.id },
+      });
+
       return { empresa: nuevaEmpresa, usuario: nuevoUsuario, rol: rolAdmin };
     });
 
@@ -154,6 +159,13 @@ async function login(req, res) {
     await prisma.usuario.update({
       where: { id: usuario.id },
       data: { ultimoAcceso: new Date() },
+    });
+
+    // Garantizar fila en usuario_empresas (safety net para usuarios previos a multi-empresa)
+    await prisma.usuarioEmpresa.upsert({
+      where: { usuarioId_empresaId: { usuarioId: usuario.id, empresaId: usuario.empresaId } },
+      update: {},
+      create: { usuarioId: usuario.id, empresaId: usuario.empresaId, rolId: usuario.rolId },
     });
 
     const token = generarToken({
@@ -287,4 +299,42 @@ async function resetPassword(req, res) {
   }
 }
 
-module.exports = { registro, login, perfil, recuperar, resetPassword };
+// POST /api/auth/cambiar-empresa/:empresaId  (ruta protegida)
+async function cambiarEmpresa(req, res) {
+  const { usuarioId } = req.usuario;
+  const empresaId = parseInt(req.params.empresaId);
+
+  if (isNaN(empresaId)) return res.status(400).json({ error: 'ID de empresa inválido' });
+
+  try {
+    const vinculo = await prisma.usuarioEmpresa.findUnique({
+      where: { usuarioId_empresaId: { usuarioId, empresaId } },
+      include: { rol: true, empresa: true },
+    });
+
+    if (!vinculo || !vinculo.empresa.activa) {
+      return res.status(403).json({ error: 'No tienes acceso a esta empresa' });
+    }
+
+    const token = generarToken({
+      usuarioId,
+      empresaId,
+      rolId: vinculo.rolId,
+      rol:   vinculo.rol.nombre,
+    });
+
+    return res.json({
+      token,
+      empresa: {
+        id:     vinculo.empresa.id,
+        ruc:    vinculo.empresa.ruc,
+        nombre: vinculo.empresa.nombre,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error al cambiar de empresa' });
+  }
+}
+
+module.exports = { registro, login, perfil, recuperar, resetPassword, cambiarEmpresa };
