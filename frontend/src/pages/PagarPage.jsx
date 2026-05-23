@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import PanelAdjuntos from "../components/PanelAdjuntos";
 
 const fmt = (n) => `B/. ${Number(n ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtFecha = (d) => (d ? new Date(d).toLocaleDateString("es-PA") : "—");
@@ -190,6 +191,95 @@ function ModalNuevaOC({ proveedores, productos, onClose, onSuccess }) {
   );
 }
 
+// ── Modal: Detalle de Orden de Compra ─────────────────────────────────────────
+function ModalDetalleOC({ orden, onClose, onPago }) {
+  const [detalle, setDetalle] = useState(null);
+
+  useEffect(() => {
+    api.get(`/compras/${orden.id}`)
+      .then((r) => setDetalle(r.data))
+      .catch(() => {});
+  }, [orden.id]);
+
+  const lineas = detalle?.lineas ?? [];
+  const pagos  = detalle?.pagos  ?? orden.pagos ?? [];
+
+  return (
+    <div style={st.overlay}>
+      <div style={{ ...st.modal, maxWidth: 680 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontFamily: "monospace", color: "#4E9AF1" }}>{orden.numero}</h3>
+            <p style={{ margin: 0, fontSize: 13, color: "#666" }}>{orden.proveedor?.nombre}</p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#aaa" }}>×</button>
+        </div>
+
+        {/* Líneas */}
+        {detalle === null ? (
+          <p style={{ color: "#aaa", fontSize: 13 }}>Cargando…</p>
+        ) : (
+          <>
+            <table style={{ ...st.tabla, marginBottom: 14 }}>
+              <thead>
+                <tr>
+                  {["Descripción", "Cant.", "Precio unit.", "ITBMS", "Subtotal"].map((h) => (
+                    <th key={h} style={st.th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {lineas.map((l) => {
+                  const sub = Math.round(Number(l.cantidad) * Number(l.precioUnit) * 100) / 100;
+                  const itbmsAmt = l.itbms ? Math.round(sub * 0.07 * 100) / 100 : 0;
+                  return (
+                    <tr key={l.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                      <td style={st.td}>{l.descripcion}</td>
+                      <td style={{ ...st.td, textAlign: "right" }}>{Number(l.cantidad)}</td>
+                      <td style={{ ...st.td, textAlign: "right" }}>{fmt(l.precioUnit)}</td>
+                      <td style={{ ...st.td, textAlign: "right", color: "#4E9AF1" }}>{l.itbms ? fmt(itbmsAmt) : "—"}</td>
+                      <td style={{ ...st.td, textAlign: "right", fontWeight: 700 }}>{fmt(sub + itbmsAmt)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* Totales */}
+            <div style={{ display: "flex", gap: 20, justifyContent: "flex-end", fontSize: 13, marginBottom: 16 }}>
+              <span>Total: <strong style={{ fontSize: 15, color: "#1a1a2e" }}>{fmt(orden.total)}</strong></span>
+            </div>
+
+            {/* Pagos */}
+            {pagos.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#555", margin: "0 0 6px" }}>Pagos registrados</p>
+                {pagos.map((p) => (
+                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13,
+                                           background: "#f8fef8", borderRadius: 7, padding: "6px 10px", marginBottom: 4 }}>
+                    <span style={{ color: "#666" }}>{fmtFecha(p.fecha)} · {p.metodo}</span>
+                    <span style={{ fontWeight: 700, color: "#00C896" }}>{fmt(p.monto)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Adjuntos */}
+            <PanelAdjuntos tipo="ORDEN_COMPRA" referenciaId={orden.id} />
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
+              <button onClick={onClose} style={st.btnSec}>Cerrar</button>
+              {orden.estado === "RECIBIDA" && (
+                <button onClick={() => { onClose(); onPago(orden); }} style={st.btnPri}>Registrar pago</button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Modal: Registrar pago ─────────────────────────────────────────────────────
 function ModalPago({ orden, onClose, onSuccess }) {
   const hoy = new Date().toISOString().slice(0, 10);
@@ -250,6 +340,7 @@ export default function PagarPage() {
   const [filtroEstado, setFiltroEstado] = useState("RECIBIDA");
   const [pagina, setPagina]       = useState(1);
   const [modalPago, setModalPago] = useState(null);
+  const [modalDetalleOC, setModalDetalleOC] = useState(null);
   const [modalNuevaOC, setModalNuevaOC] = useState(false);
   const [proveedores, setProveedores] = useState([]);
   const [productos, setProductos]     = useState([]);
@@ -385,16 +476,18 @@ export default function PagarPage() {
                           {pagado > 0 ? <span style={{ color: "#00C896" }}>{fmt(pagado)}</span> : "—"}
                         </td>
                         <td style={{ ...st.td, whiteSpace: "nowrap" }}>
+                          <button onClick={() => setModalDetalleOC(o)} style={st.btnAcc}>Ver</button>
                           {o.estado === "BORRADOR" && (
-                            <button onClick={() => cambiarEstado(o.id, "ENVIADA")} style={st.btnAcc}>Enviar</button>
+                            <button onClick={() => cambiarEstado(o.id, "ENVIADA")}
+                              style={{ ...st.btnAcc, marginLeft: 4 }}>Enviar</button>
                           )}
                           {o.estado === "ENVIADA" && (
                             <button onClick={() => cambiarEstado(o.id, "RECIBIDA")}
-                              style={{ ...st.btnAcc, color: "#00C896" }}>Recibir</button>
+                              style={{ ...st.btnAcc, marginLeft: 4, color: "#00C896" }}>Recibir</button>
                           )}
                           {o.estado === "RECIBIDA" && (
                             <button onClick={() => setModalPago(o)}
-                              style={{ ...st.btnAcc, color: "#FF6B6B" }}>Pagar</button>
+                              style={{ ...st.btnAcc, marginLeft: 4, color: "#FF6B6B" }}>Pagar</button>
                           )}
                           <button onClick={() => descargarPDF(o)}
                             style={{ ...st.btnAcc, marginLeft: 4 }}>↓ PDF</button>
@@ -425,6 +518,13 @@ export default function PagarPage() {
           productos={productos}
           onClose={() => setModalNuevaOC(false)}
           onSuccess={() => { cargar(); setFiltroEstado("BORRADOR"); }}
+        />
+      )}
+      {modalDetalleOC && (
+        <ModalDetalleOC
+          orden={modalDetalleOC}
+          onClose={() => setModalDetalleOC(null)}
+          onPago={(o) => setModalPago(o)}
         />
       )}
       {modalPago && <ModalPago orden={modalPago} onClose={() => setModalPago(null)} onSuccess={cargar} />}

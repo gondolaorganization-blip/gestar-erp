@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const { listar, obtener, crear, cambiarEstado, registrarPago } = require('../controllers/compras.controller');
+const { manejarUpload, listar: listarAdj, subir, descargar, eliminar } = require('../controllers/adjuntos.controller');
 const { verificarToken } = require('../middlewares/auth.middleware');
 const { generarOrdenCompraPDF } = require('../services/pdf.service');
 const { enviarOrdenCompra }     = require('../services/email.service');
@@ -13,6 +14,12 @@ router.get('/:id',               obtener);
 router.post('/',                 crear);
 router.patch('/:id/estado',      cambiarEstado);
 router.post('/:id/pagos',        registrarPago);
+
+// Adjuntos
+router.get( '/:referenciaId/adjuntos',    (req, res) => { req.params.tipo = 'ORDEN_COMPRA'; listarAdj(req, res); });
+router.post('/:referenciaId/adjuntos',    manejarUpload, (req, res) => { req.params.tipo = 'ORDEN_COMPRA'; subir(req, res); });
+router.get( '/adjuntos/:id/descargar',    descargar);
+router.delete('/adjuntos/:id',            eliminar);
 
 // GET /api/compras/:id/pdf
 router.get('/:id/pdf', async (req, res) => {

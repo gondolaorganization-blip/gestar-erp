@@ -20,9 +20,10 @@ model Empresa {
   logo        String?
   moneda      String    @default("USD")       // Panamá es dolarizado
   activa      Boolean   @default(true)
-  plan        String    @default("TRIAL")   // TRIAL | BASICO | PROFESIONAL | DESPACHO | ENTERPRISE
-  trialVence  DateTime?
-  creadoEn    DateTime  @default(now())
+  plan                 String    @default("TRIAL")   // TRIAL | BASICO | PROFESIONAL | DESPACHO | ENTERPRISE
+  trialVence           DateTime?
+  paypalSubscriptionId String?
+  creadoEn             DateTime  @default(now())
 
   usuarios             Usuario[]
   clientes             Cliente[]
@@ -43,6 +44,7 @@ model Empresa {
   actividadesCRM       ActividadCRM[]
   entidades            Entidad[]
   contactosCRM         Contacto[]
+  adjuntos             Adjunto[]
 
   @@map("empresas")
 }
@@ -513,4 +515,23 @@ model MovimientoInventario {
   producto    Producto  @relation(fields: [productoId], references: [id])
 
   @@map("movimientos_inventario")
+}
+
+// ─── ADJUNTOS ─────────────────────────────────────────────────────────────────
+
+model Adjunto {
+  id            Int       @id @default(autoincrement())
+  empresaId     Int
+  tipo          String                        // FACTURA | ORDEN_COMPRA
+  referenciaId  Int                           // id de la factura u orden
+  nombre        String                        // nombre original del archivo
+  mimeType      String                        // application/pdf, image/jpeg, etc.
+  tamano        Int                           // bytes
+  datos         Bytes                         // contenido del archivo
+  creadoEn      DateTime  @default(now())
+
+  empresa       Empresa   @relation(fields: [empresaId], references: [id])
+
+  @@index([tipo, referenciaId])
+  @@map("adjuntos")
 }

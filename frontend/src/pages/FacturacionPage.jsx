@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { exportarCSV } from "../utils/exportarCSV";
+import PanelAdjuntos from "../components/PanelAdjuntos";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -353,6 +354,8 @@ function ModalDetalle({ facturaId, onClose, onPago, onAnular }) {
             </div>
           </div>
         )}
+
+        <PanelAdjuntos tipo="FACTURA" referenciaId={facturaId} />
 
         {msgEmail && (
           <p style={{ fontSize: 13, marginBottom: 10, color: msgEmail.ok ? "#00C896" : "#FF6B6B" }}>

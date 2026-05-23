@@ -30,7 +30,10 @@ app.use(morgan(isProd ? 'combined' : 'dev'));
 
 // ─── PARSERS ─────────────────────────────────────────────────────────────────
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({
+  limit: '1mb',
+  verify: (req, _res, buf) => { req.rawBody = buf.toString(); },
+}));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ─── RATE LIMITING ───────────────────────────────────────────────────────────
@@ -81,6 +84,7 @@ const impuestosRoutes       = require('./routes/impuestos.routes');
 const importacionRoutes     = require('./routes/importacion.routes');
 const backupRoutes          = require('./routes/backup.routes');
 const adminRoutes           = require('./routes/admin.routes');
+const paypalRoutes          = require('./routes/paypal.routes');
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/admin',        adminRoutes);
@@ -105,6 +109,7 @@ app.use('/api/contactos',        contactosRoutes);
 app.use('/api/impuestos',            impuestosRoutes);
 app.use('/api/importacion-bancaria', importacionRoutes);
 app.use('/api/backup',               backupRoutes);
+app.use('/api/paypal',               paypalRoutes);
 
 // ─── RAÍZ E HEALTH CHECK ─────────────────────────────────────────────────────
 
