@@ -3,6 +3,7 @@ const { listar, obtener, crear, anular, registrarPago } = require('../controller
 const { manejarUpload, listar: listarAdj, subir, descargar, eliminar } = require('../controllers/adjuntos.controller');
 const { verificarToken } = require('../middlewares/auth.middleware');
 const { generarFacturaPDF } = require('../services/pdf.service');
+const { generarFacturasExcel } = require('../services/excel.service');
 const { enviarFactura } = require('../services/email.service');
 const prisma = require('../config/prisma');
 
@@ -14,6 +15,36 @@ router.get('/:id',           obtener);
 router.post('/',             crear);
 router.patch('/:id/anular',  anular);
 router.post('/:id/pagos',    registrarPago);
+
+// GET /api/facturas/exportar?desde=YYYY-MM-DD&hasta=YYYY-MM-DD&estado=PENDIENTE
+router.get('/exportar', async (req, res) => {
+  const { empresaId } = req.usuario;
+  const { desde, hasta, estado } = req.query;
+  try {
+    const where = { empresaId };
+    if (estado) where.estado = estado;
+    if (desde || hasta) {
+      where.fecha = {};
+      if (desde) where.fecha.gte = new Date(desde);
+      if (hasta) where.fecha.lte = new Date(hasta);
+    }
+    const facturas = await prisma.factura.findMany({
+      where,
+      include: { cliente: { select: { nombre: true } } },
+      orderBy: { fecha: 'asc' },
+    });
+    const empresa = await prisma.empresa.findUnique({ where: { id: empresaId } });
+    const buf = generarFacturasExcel(facturas, empresa);
+    const nombre = `facturas-${desde ?? ''}${hasta ? `-${hasta}` : ''}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
+    res.setHeader('Content-Length', buf.length);
+    return res.end(buf);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error al exportar facturas' });
+  }
+});
 
 // Adjuntos
 router.get( '/:referenciaId/adjuntos',          (req, res) => { req.params.tipo = 'FACTURA'; listarAdj(req, res); });

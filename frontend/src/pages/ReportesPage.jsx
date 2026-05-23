@@ -31,6 +31,21 @@ function TabBalance() {
 
   useEffect(() => { cargar(); }, []); // eslint-disable-line
 
+  async function descargarPDF() {
+    try {
+      const token = localStorage.getItem("token") ?? "";
+      const base  = import.meta.env.VITE_API_URL ?? "";
+      const res = await fetch(`${base}/api/reportes/balance-general/pdf?al=${al}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `balance-${al}.pdf`; a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { alert("No se pudo generar el PDF."); }
+  }
+
   function Seccion({ titulo, cuentas, color }) {
     const total = cuentas?.reduce((s, c) => s + c.saldo, 0) ?? 0;
     return (
@@ -60,10 +75,7 @@ function TabBalance() {
           <input style={{ ...st.input, marginBottom: 0, width: 180 }} type="date" value={al} onChange={(e) => setAl(e.target.value)} />
         </div>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Generar"}</button>
-        {data && (
-          <a href={`${import.meta.env.VITE_API_URL ?? ""}/api/reportes/balance-general/pdf?al=${al}`}
-             target="_blank" rel="noreferrer" style={{ ...st.btnSec, textDecoration: "none" }}>↓ PDF</a>
-        )}
+        {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
       </div>
 
       {data && (
@@ -101,6 +113,21 @@ function TabResultados() {
 
   useEffect(() => { cargar(); }, []); // eslint-disable-line
 
+  async function descargarPDF() {
+    try {
+      const token = localStorage.getItem("token") ?? "";
+      const base  = import.meta.env.VITE_API_URL ?? "";
+      const res = await fetch(`${base}/api/reportes/estado-resultados/pdf?desde=${desde}&hasta=${hasta}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `estado-resultados-${desde}-${hasta}.pdf`; a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { alert("No se pudo generar el PDF."); }
+  }
+
   return (
     <div>
       <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -113,10 +140,7 @@ function TabResultados() {
           <input style={{ ...st.input, marginBottom: 0, width: 160 }} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </div>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Generar"}</button>
-        {data && (
-          <a href={`${import.meta.env.VITE_API_URL ?? ""}/api/reportes/estado-resultados/pdf?desde=${desde}&hasta=${hasta}`}
-             target="_blank" rel="noreferrer" style={{ ...st.btnSec, textDecoration: "none" }}>↓ PDF</a>
-        )}
+        {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
       </div>
 
       {data && (
@@ -176,6 +200,23 @@ function TabLibroDiario() {
 
   useEffect(() => { cargar(); }, []); // eslint-disable-line
 
+  async function descargarPDF() {
+    try {
+      const token = localStorage.getItem("token") ?? "";
+      const base  = import.meta.env.VITE_API_URL ?? "";
+      const res = await fetch(`${base}/api/reportes/libro-diario/pdf?desde=${desde}&hasta=${hasta}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `libro-diario-${desde}-${hasta}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { alert("No se pudo generar el PDF."); }
+  }
+
   return (
     <div>
       <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -188,6 +229,7 @@ function TabLibroDiario() {
           <input style={{ ...st.input, marginBottom: 0, width: 160 }} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </div>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Generar"}</button>
+        {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
       </div>
 
       {data && (
@@ -255,6 +297,23 @@ function TabCartera() {
 
   useEffect(() => { cargar(); }, []);
 
+  async function descargarPDF() {
+    try {
+      const token = localStorage.getItem("token") ?? "";
+      const base  = import.meta.env.VITE_API_URL ?? "";
+      const res = await fetch(`${base}/api/reportes/antiguedad-cartera/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `cartera-${new Date().toISOString().slice(0,10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { alert("No se pudo generar el PDF."); }
+  }
+
   const tramos = ["corriente", "dias30", "dias60", "dias90", "mas90"];
   const labels = ["Corriente", "1-30 días", "31-60 días", "61-90 días", "+90 días"];
   const colors = ["#00C896", "#F5A623", "#E67E22", "#FF6B6B", "#C0392B"];
@@ -263,6 +322,7 @@ function TabCartera() {
     <div>
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Actualizar"}</button>
+        {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
       </div>
 
       {data && (

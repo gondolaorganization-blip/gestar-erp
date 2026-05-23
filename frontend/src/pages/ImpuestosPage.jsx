@@ -310,6 +310,34 @@ export default function ImpuestosPage() {
 
   const anios = Array.from({ length: 5 }, (_, i) => anioActual - i);
 
+  const apiBase = import.meta.env.VITE_API_URL ?? "";
+  const token   = localStorage.getItem("token") ?? "";
+
+  async function descargarArchivo(url, nombre) {
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { alert("No se pudo descargar el archivo."); }
+  }
+
+  // Botones de descarga por tab
+  const botonesByTab = [
+    [
+      { label: "↓ PDF",   url: `${apiBase}/api/impuestos/itbms/pdf?anio=${anio}`,   nombre: `itbms-${anio}.pdf`  },
+      { label: "↓ Excel", url: `${apiBase}/api/impuestos/itbms/excel?anio=${anio}`, nombre: `itbms-${anio}.xlsx` },
+    ],
+    [
+      { label: "↓ PDF",   url: `${apiBase}/api/impuestos/isr/pdf?anio=${anio}`,     nombre: `isr-${anio}.pdf`    },
+    ],
+    [
+      { label: "↓ PDF",   url: `${apiBase}/api/impuestos/css/pdf?anio=${anio}`,     nombre: `css-sea-${anio}.pdf` },
+    ],
+  ];
+
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", minHeight: "100vh", background: "#f7f8fc" }}>
       {/* Header */}
@@ -323,6 +351,14 @@ export default function ImpuestosPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <h2 style={st.h2}>Impuestos / DGI Panamá</h2>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {data && botonesByTab[tab]?.map((b) => (
+              <button key={b.label} onClick={() => descargarArchivo(b.url, b.nombre)}
+                style={{ background: b.label.includes("Excel") ? "#00C896" : "#4E9AF1",
+                         color: "#fff", border: "none", borderRadius: 8, padding: "7px 14px",
+                         cursor: "pointer", fontWeight: 600, fontSize: 12 }}>
+                {b.label}
+              </button>
+            ))}
             <label style={{ fontSize: 13, color: "#666" }}>Período fiscal:</label>
             <select style={{ ...st.input, width: 100, marginBottom: 0 }}
                     value={anio} onChange={(e) => setAnio(Number(e.target.value))}>

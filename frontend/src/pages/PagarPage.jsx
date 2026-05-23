@@ -397,6 +397,25 @@ export default function PagarPage() {
     }
   }
 
+  async function exportarExcel() {
+    try {
+      const token = localStorage.getItem("token") ?? "";
+      const base  = import.meta.env.VITE_API_URL ?? "";
+      const params = new URLSearchParams();
+      if (filtroEstado) params.set("estado", filtroEstado);
+      const res = await fetch(`${base}/api/compras/exportar?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `compras${filtroEstado ? `-${filtroEstado.toLowerCase()}` : ""}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { alert("No se pudo exportar."); }
+  }
+
   const totalPag   = data?.paginacion?.totalPaginas ?? 1;
   const total      = data?.paginacion?.total ?? 0;
   const totalMonto = (data?.datos ?? []).reduce((s, o) => s + Number(o.total), 0);
@@ -412,9 +431,14 @@ export default function PagarPage() {
       <div style={{ ...st.wrap, maxWidth: 1100 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <h2 style={{ ...st.h2, margin: 0 }}>Cuentas por Pagar</h2>
-          <button onClick={() => setModalNuevaOC(true)} style={st.btnPri}>
-            + Nueva orden de compra
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {data?.datos?.length > 0 && (
+              <button onClick={exportarExcel} style={{ ...st.btnSec, color: "#00C896" }}>↓ Excel</button>
+            )}
+            <button onClick={() => setModalNuevaOC(true)} style={st.btnPri}>
+              + Nueva orden de compra
+            </button>
+          </div>
         </div>
 
         {/* Resumen rápido */}

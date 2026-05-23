@@ -423,6 +423,25 @@ export default function FacturacionPage() {
     try { await api.patch(`/facturas/${id}/anular`); cargar(); } catch { /* noop */ }
   }
 
+  async function exportarExcel() {
+    try {
+      const token = localStorage.getItem("token") ?? "";
+      const base  = import.meta.env.VITE_API_URL ?? "";
+      const params = new URLSearchParams();
+      if (filtroEstado) params.set("estado", filtroEstado);
+      const res = await fetch(`${base}/api/facturas/exportar?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `facturas${filtroEstado ? `-${filtroEstado.toLowerCase()}` : ""}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch { alert("No se pudo exportar."); }
+  }
+
   const totalPag = data?.paginacion?.totalPaginas ?? 1;
   const total    = data?.paginacion?.total ?? 0;
 
@@ -450,7 +469,10 @@ export default function FacturacionPage() {
             ))}
           </select>
           {data?.datos?.length > 0 && (
-            <button onClick={() => exportarCSV(data.datos, ["numero","fecha","fechaVence","estado","subtotal","itbms","total"], ["Número","Fecha","Vence","Estado","Subtotal","ITBMS","Total"], "facturas")} style={st.btnSec}>↓ CSV</button>
+            <>
+              <button onClick={() => exportarCSV(data.datos, ["numero","fecha","fechaVence","estado","subtotal","itbms","total"], ["Número","Fecha","Vence","Estado","Subtotal","ITBMS","Total"], "facturas")} style={st.btnSec}>↓ CSV</button>
+              <button onClick={exportarExcel} style={{ ...st.btnSec, color: "#00C896" }}>↓ Excel</button>
+            </>
           )}
           <button onClick={() => setModalNueva(true)} style={st.btnPri}>+ Nueva factura</button>
         </div>
