@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { verificarToken } = require('../middlewares/auth.middleware');
 const ctrl = require('../controllers/impuestos.controller');
 const { generarITBMSPDF, generarISRPDF, generarCSSPDF } = require('../services/pdf.service');
-const { generarITBMSExcel } = require('../services/excel.service');
+const { generarITBMSExcel, generarISRExcel, generarCSSExcel } = require('../services/excel.service');
 const prisma = require('../config/prisma');
 
 router.use(verificarToken);
@@ -80,6 +80,38 @@ router.get('/css/pdf', async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Error al generar el PDF' });
+  }
+});
+
+// GET /api/impuestos/isr/excel?anio=2025
+router.get('/isr/excel', async (req, res) => {
+  try {
+    const datos   = await getDatosImpuestos(req);
+    const empresa = await getEmpresa(req.usuario.empresaId);
+    const buf = generarISRExcel(datos.isr, empresa, datos.anio);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="isr-${datos.anio}.xlsx"`);
+    res.setHeader('Content-Length', buf.length);
+    return res.end(buf);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error al generar el Excel' });
+  }
+});
+
+// GET /api/impuestos/css/excel?anio=2025
+router.get('/css/excel', async (req, res) => {
+  try {
+    const datos   = await getDatosImpuestos(req);
+    const empresa = await getEmpresa(req.usuario.empresaId);
+    const buf = generarCSSExcel(datos.css, empresa, datos.anio);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="css-sea-${datos.anio}.xlsx"`);
+    res.setHeader('Content-Length', buf.length);
+    return res.end(buf);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error al generar el Excel' });
   }
 });
 

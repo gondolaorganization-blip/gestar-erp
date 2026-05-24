@@ -332,9 +332,11 @@ export default function ImpuestosPage() {
     ],
     [
       { label: "↓ PDF",   url: `${apiBase}/api/impuestos/isr/pdf?anio=${anio}`,     nombre: `isr-${anio}.pdf`    },
+      { label: "↓ Excel", url: `${apiBase}/api/impuestos/isr/excel?anio=${anio}`,   nombre: `isr-${anio}.xlsx`   },
     ],
     [
-      { label: "↓ PDF",   url: `${apiBase}/api/impuestos/css/pdf?anio=${anio}`,     nombre: `css-sea-${anio}.pdf` },
+      { label: "↓ PDF",   url: `${apiBase}/api/impuestos/css/pdf?anio=${anio}`,     nombre: `css-sea-${anio}.pdf`  },
+      { label: "↓ Excel", url: `${apiBase}/api/impuestos/css/excel?anio=${anio}`,   nombre: `css-sea-${anio}.xlsx` },
     ],
   ];
 

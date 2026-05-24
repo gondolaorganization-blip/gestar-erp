@@ -76,6 +76,16 @@ function TabBalance() {
         </div>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Generar"}</button>
         {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
+        {data && <button onClick={async () => {
+          try {
+            const token = localStorage.getItem("token") ?? "";
+            const base  = import.meta.env.VITE_API_URL ?? "";
+            const res = await fetch(`${base}/api/reportes/balance-general/excel?al=${al}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `balance-${al}.xlsx`; a.click(); URL.revokeObjectURL(a.href);
+          } catch { alert("No se pudo generar el Excel."); }
+        }} style={{ ...st.btnSec, background: "#e6f9f2", color: "#00704a" }}>↓ Excel</button>}
       </div>
 
       {data && (
@@ -141,6 +151,16 @@ function TabResultados() {
         </div>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Generar"}</button>
         {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
+        {data && <button onClick={async () => {
+          try {
+            const token = localStorage.getItem("token") ?? "";
+            const base  = import.meta.env.VITE_API_URL ?? "";
+            const res = await fetch(`${base}/api/reportes/estado-resultados/excel?desde=${desde}&hasta=${hasta}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `estado-resultados-${desde}-${hasta}.xlsx`; a.click(); URL.revokeObjectURL(a.href);
+          } catch { alert("No se pudo generar el Excel."); }
+        }} style={{ ...st.btnSec, background: "#e6f9f2", color: "#00704a" }}>↓ Excel</button>}
       </div>
 
       {data && (
@@ -230,6 +250,16 @@ function TabLibroDiario() {
         </div>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Generar"}</button>
         {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
+        {data && <button onClick={async () => {
+          try {
+            const token = localStorage.getItem("token") ?? "";
+            const base  = import.meta.env.VITE_API_URL ?? "";
+            const res = await fetch(`${base}/api/reportes/libro-diario/excel?desde=${desde}&hasta=${hasta}`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `libro-diario-${desde}-${hasta}.xlsx`; a.click(); URL.revokeObjectURL(a.href);
+          } catch { alert("No se pudo generar el Excel."); }
+        }} style={{ ...st.btnSec, background: "#e6f9f2", color: "#00704a" }}>↓ Excel</button>}
       </div>
 
       {data && (
@@ -323,6 +353,16 @@ function TabCartera() {
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
         <button onClick={cargar} disabled={loading} style={st.btnPri}>{loading ? "Cargando…" : "Actualizar"}</button>
         {data && <button onClick={descargarPDF} style={st.btnSec}>↓ PDF</button>}
+        {data && <button onClick={async () => {
+          try {
+            const token = localStorage.getItem("token") ?? "";
+            const base  = import.meta.env.VITE_API_URL ?? "";
+            const res = await fetch(`${base}/api/reportes/antiguedad-cartera/excel`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `cartera-${new Date().toISOString().slice(0,10)}.xlsx`; a.click(); URL.revokeObjectURL(a.href);
+          } catch { alert("No se pudo generar el Excel."); }
+        }} style={{ ...st.btnSec, background: "#e6f9f2", color: "#00704a" }}>↓ Excel</button>}
       </div>
 
       {data && (
