@@ -99,6 +99,14 @@ server {
 | `EMAIL_FROM` | Remitente de los correos | `GESTAR ERP <noreply@gestarsoft.com>` |
 | `FRONTEND_URL` | URL pública del frontend (links en emails) | `https://app.gestarsoft.com` |
 | `ADMIN_SECRET` | Clave del endpoint admin (≥ 24 chars) | `<hex aleatorio>` |
+| `R2_ACCOUNT_ID` | *(Opcional)* ID de cuenta Cloudflare para R2 | `abc123...` |
+| `R2_ACCESS_KEY_ID` | *(Opcional)* Access Key del token R2 | `...` |
+| `R2_SECRET_ACCESS_KEY` | *(Opcional)* Secret del token R2 | `...` |
+| `R2_BUCKET` | *(Opcional)* Nombre del bucket R2 | `gestar-erp-adjuntos` |
+
+> **Adjuntos / R2:** sin las 4 variables `R2_*`, los adjuntos se guardan como binario en
+> Postgres (modo por defecto, funciona sin configuración). Si defines las 4, los archivos
+> se suben a Cloudflare R2 y en la DB solo se guarda la llave. El cambio es automático.
 
 > **Nota Resend:** sin verificar el dominio en https://resend.com/domains solo puedes
 > enviar desde `onboarding@resend.dev`. Para usar `noreply@gestarsoft.com` añade los

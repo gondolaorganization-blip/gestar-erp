@@ -547,7 +547,8 @@ model Adjunto {
   nombre        String                        // nombre original del archivo
   mimeType      String                        // application/pdf, image/jpeg, etc.
   tamano        Int                           // bytes
-  datos         Bytes                         // contenido del archivo
+  datos         Bytes?                        // contenido del archivo (cuando se guarda en Postgres)
+  storageKey    String?                       // llave en Cloudflare R2 (cuando se guarda en R2)
   creadoEn      DateTime  @default(now())
 
   empresa       Empresa   @relation(fields: [empresaId], references: [id])

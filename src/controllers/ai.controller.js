@@ -1,7 +1,7 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const prisma = require('../config/prisma');
 
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 1024;
 const MAX_HISTORY = 10; // máximo de turnos de conversación a enviar
 

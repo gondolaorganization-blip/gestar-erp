@@ -1,5 +1,6 @@
 const prisma  = require('../config/prisma');
 const multer  = require('multer');
+const storage = require('../services/storage.service');
 
 const MAX_SIZE   = 5 * 1024 * 1024; // 5 MB
 const MIME_OK    = new Set([
@@ -92,6 +93,21 @@ async function subir(req, res) {
   const pertenece = await verificarPertenencia(empresaId, tipo, referenciaId);
   if (!pertenece) return res.status(404).json({ error: 'Documento no encontrado.' });
 
+  // Si R2 está configurado, sube a Cloudflare y guarda solo la llave.
+  // Si no, guarda el binario en Postgres (comportamiento original).
+  let datos = null;
+  let storageKey = null;
+  if (storage.r2Configurado()) {
+    try {
+      storageKey = await storage.subirArchivo(req.file.buffer, req.file.mimetype, empresaId);
+    } catch (err) {
+      console.error('[adjuntos] Error subiendo a R2:', err.message);
+      return res.status(502).json({ error: 'No se pudo almacenar el archivo. Intenta de nuevo.' });
+    }
+  } else {
+    datos = req.file.buffer;
+  }
+
   const adjunto = await prisma.adjunto.create({
     data: {
       empresaId,
@@ -100,7 +116,8 @@ async function subir(req, res) {
       nombre:   req.file.originalname,
       mimeType: req.file.mimetype,
       tamano:   req.file.size,
-      datos:    req.file.buffer,
+      datos,
+      storageKey,
     },
     select: { id: true, nombre: true, mimeType: true, tamano: true, creadoEn: true },
   });
@@ -121,10 +138,23 @@ async function descargar(req, res) {
   });
   if (!adjunto) return res.status(404).json({ error: 'Adjunto no encontrado.' });
 
+  // El contenido puede estar en R2 (storageKey) o en Postgres (datos).
+  let contenido;
+  if (adjunto.storageKey) {
+    try {
+      contenido = await storage.obtenerArchivo(adjunto.storageKey);
+    } catch (err) {
+      console.error('[adjuntos] Error descargando de R2:', err.message);
+      return res.status(502).json({ error: 'No se pudo recuperar el archivo.' });
+    }
+  } else {
+    contenido = adjunto.datos;
+  }
+
   res.setHeader('Content-Type', adjunto.mimeType);
   res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(adjunto.nombre)}"`);
   res.setHeader('Content-Length', adjunto.tamano);
-  return res.end(adjunto.datos);
+  return res.end(contenido);
 }
 
 // ─── Eliminar adjunto ────────────────────────────────────────────────────────
@@ -135,8 +165,12 @@ async function eliminar(req, res) {
 
   if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
 
-  const adjunto = await prisma.adjunto.findFirst({ where: { id, empresaId }, select: { id: true } });
+  const adjunto = await prisma.adjunto.findFirst({ where: { id, empresaId }, select: { id: true, storageKey: true } });
   if (!adjunto) return res.status(404).json({ error: 'Adjunto no encontrado.' });
+
+  if (adjunto.storageKey) {
+    await storage.eliminarArchivo(adjunto.storageKey);
+  }
 
   await prisma.adjunto.delete({ where: { id } });
   return res.json({ mensaje: 'Adjunto eliminado.' });
