@@ -90,8 +90,19 @@ server {
 | `JWT_SECRET` | Secreto para firmar tokens (≥ 32 chars) | `<hex aleatorio de 96 chars>` |
 | `PORT` | Puerto del servidor | `3000` |
 | `NODE_ENV` | Entorno de ejecución | `production` |
-| `CORS_ORIGIN` | Dominio del frontend | `https://app.gestar-erp.com` |
+| `CORS_ORIGIN` | Dominio del frontend | `https://app.gestarsoft.com` |
 | `ANTHROPIC_API_KEY` | API key de Anthropic (IA y banco import) | `sk-ant-api03-...` |
+| `SMTP_HOST` | Host SMTP (Resend) | `smtp.resend.com` |
+| `SMTP_PORT` | Puerto SMTP | `465` |
+| `SMTP_USER` | Usuario SMTP (literal `resend` para Resend) | `resend` |
+| `SMTP_PASS` | API key de Resend | `re_...` |
+| `EMAIL_FROM` | Remitente de los correos | `GESTAR ERP <noreply@gestarsoft.com>` |
+| `FRONTEND_URL` | URL pública del frontend (links en emails) | `https://app.gestarsoft.com` |
+| `ADMIN_SECRET` | Clave del endpoint admin (≥ 24 chars) | `<hex aleatorio>` |
+
+> **Nota Resend:** sin verificar el dominio en https://resend.com/domains solo puedes
+> enviar desde `onboarding@resend.dev`. Para usar `noreply@gestarsoft.com` añade los
+> registros DNS (SPF/DKIM) que indica Resend en el panel DNS de GoDaddy.
 
 ## 6. Health check
 
