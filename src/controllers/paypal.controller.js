@@ -4,19 +4,30 @@ const PAYPAL_BASE = process.env.PAYPAL_MODE === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com';
 
+// Planes públicos. `precio` = mensual base (+ ITBMS aparte). `precioAnual` = total al año (2 meses gratis).
 const PLANES = {
-  BASICO:      { nombre: 'BASICO',      precio: 49,  label: 'Básico' },
-  PROFESIONAL: { nombre: 'PROFESIONAL', precio: 99,  label: 'Profesional' },
-  DESPACHO:    { nombre: 'DESPACHO',    precio: 149, label: 'Despacho' },
-  ENTERPRISE:  { nombre: 'ENTERPRISE',  precio: 299, label: 'Enterprise' },
+  EMPRENDE:    { nombre: 'EMPRENDE',    label: 'Emprende',    precio: 14.99, precioAnual: 149.90 },
+  BASICO:      { nombre: 'BASICO',      label: 'Básico',      precio: 24.99, precioAnual: 249.90 },
+  PROFESIONAL: { nombre: 'PROFESIONAL', label: 'Profesional', precio: 39.99, precioAnual: 399.90 },
+  DESPACHO:    { nombre: 'DESPACHO',    label: 'Despacho',    precio: 74.99, precioAnual: 749.90 },
+  ENTERPRISE:  { nombre: 'ENTERPRISE',  label: 'Enterprise',  precio: 89.99, precioAnual: 899.90 },
 };
 
-const paypalPlanId = (plan) => ({
-  BASICO:      process.env.PAYPAL_PLAN_ID_BASICO,
-  PROFESIONAL: process.env.PAYPAL_PLAN_ID_PROFESIONAL,
-  DESPACHO:    process.env.PAYPAL_PLAN_ID_DESPACHO,
-  ENTERPRISE:  process.env.PAYPAL_PLAN_ID_ENTERPRISE,
-}[plan]);
+// Plan IDs de PayPal por tier y periodicidad (se leen de env en runtime).
+const PLAN_IDS = {
+  EMPRENDE:    { mensual: () => process.env.PAYPAL_PLAN_ID_EMPRENDE,    anual: () => process.env.PAYPAL_PLAN_ID_EMPRENDE_ANUAL },
+  BASICO:      { mensual: () => process.env.PAYPAL_PLAN_ID_BASICO,      anual: () => process.env.PAYPAL_PLAN_ID_BASICO_ANUAL },
+  PROFESIONAL: { mensual: () => process.env.PAYPAL_PLAN_ID_PROFESIONAL, anual: () => process.env.PAYPAL_PLAN_ID_PROFESIONAL_ANUAL },
+  DESPACHO:    { mensual: () => process.env.PAYPAL_PLAN_ID_DESPACHO,    anual: () => process.env.PAYPAL_PLAN_ID_DESPACHO_ANUAL },
+  ENTERPRISE:  { mensual: () => process.env.PAYPAL_PLAN_ID_ENTERPRISE,  anual: () => process.env.PAYPAL_PLAN_ID_ENTERPRISE_ANUAL },
+};
+
+// Planes Fundador: precio especial de por vida, NO listados públicamente.
+// Cada uno da acceso al mismo tier indicado en `tier`.
+const FUNDADORES = {
+  FUNDADOR_DESPACHO:   { tier: 'DESPACHO',   precio: 59.99, id: () => process.env.PAYPAL_PLAN_ID_FUNDADOR_DESPACHO },
+  FUNDADOR_ENTERPRISE: { tier: 'ENTERPRISE', precio: 74.99, id: () => process.env.PAYPAL_PLAN_ID_FUNDADOR_ENTERPRISE },
+};
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
@@ -54,7 +65,8 @@ async function pp(method, path, body) {
 async function getPlanes(req, res) {
   const planes = Object.values(PLANES).map((p) => ({
     ...p,
-    paypalPlanId: paypalPlanId(p.nombre),
+    paypalPlanId:      PLAN_IDS[p.nombre].mensual(),
+    paypalPlanIdAnual: PLAN_IDS[p.nombre].anual(),
   }));
   res.json({ ok: true, data: planes });
 }
@@ -131,14 +143,17 @@ async function webhook(req, res) {
 
 // ── Privados ──────────────────────────────────────────────────────────────────
 
-function _planPorPaypalId(paypalPlanId) {
-  const mapa = {
-    [process.env.PAYPAL_PLAN_ID_BASICO]:      'BASICO',
-    [process.env.PAYPAL_PLAN_ID_PROFESIONAL]: 'PROFESIONAL',
-    [process.env.PAYPAL_PLAN_ID_DESPACHO]:    'DESPACHO',
-    [process.env.PAYPAL_PLAN_ID_ENTERPRISE]:  'ENTERPRISE',
-  };
-  return mapa[paypalPlanId] ?? null;
+function _planPorPaypalId(planId) {
+  if (!planId) return null;
+  // Mensual o anual de cualquier tier
+  for (const [tier, ids] of Object.entries(PLAN_IDS)) {
+    if (planId === ids.mensual() || planId === ids.anual()) return tier;
+  }
+  // Planes Fundador → dan acceso a su tier base
+  for (const f of Object.values(FUNDADORES)) {
+    if (planId === f.id()) return f.tier;
+  }
+  return null;
 }
 
 async function _aplicarEvento(empresa, eventType, resource, subscriptionId) {
