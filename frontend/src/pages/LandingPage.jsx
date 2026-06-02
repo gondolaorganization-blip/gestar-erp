@@ -104,6 +104,7 @@ const FEATURES = [
   { icon: "✦", title: "Asistente IA Financiero", desc: "Pregúntale a tu contador virtual: flujo de caja, proyecciones, alertas de impuestos y análisis en tiempo real." },
   { icon: "⊠", title: "Impuestos y DGI", desc: "ITBMS 7%, retenciones, cálculo automático y alertas de vencimiento. Formularios DGI próximamente.", pronto: true },
   { icon: "◎", title: "CRM integrado", desc: "Gestiona leads, pipeline de ventas y seguimiento de oportunidades desde el mismo sistema." },
+  { icon: "▦", title: "Inventario y Stock", desc: "Control de productos, entradas y salidas, alertas de stock mínimo y valoración de inventario adaptada a Panamá." },
 ];
 
 const TESTIMONIALS = [
@@ -303,7 +304,7 @@ export default function GestarERPLanding() {
             fontSize: 18, color: "rgba(255,255,255,0.6)", lineHeight: 1.7,
             maxWidth: 560, margin: "0 auto 40px", animationDelay: "0.2s",
           }}>
-            Facturación electrónica DGI, nómina con CSS integrado, contabilidad local y asistente IA financiero — todo en un sistema diseñado para la realidad empresarial panameña.
+            Contabilidad, nómina con CSS, inventario y asistente IA financiero — todo en un sistema diseñado para la realidad empresarial panameña.
           </p>
 
           <div className="fade-up lp-hero-btns" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", animationDelay: "0.3s" }}>
@@ -317,7 +318,7 @@ export default function GestarERPLanding() {
           </div>
 
           <div className="fade-up" style={{ marginTop: 48, display: "flex", gap: 32, justifyContent: "center", flexWrap: "wrap", animationDelay: "0.4s" }}>
-            {[["DGI", "Certificado"], ["CSS", "Integrado"], ["Yappy", "Aceptado"], ["IA", "Incluida"]].map(([t, s]) => (
+            {[["DGI", "Certificado"], ["CSS", "Integrado"], ["Yappy", "Aceptado"], ["IA", "Incluida"], ["INVENTARIO", "Incluido"]].map(([t, s]) => (
               <div key={t} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: "#00C896", fontFamily: "'DM Mono', monospace" }}>{t}</div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500, letterSpacing: "0.06em" }}>{s}</div>
