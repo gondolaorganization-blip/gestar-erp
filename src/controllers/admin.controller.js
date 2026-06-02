@@ -17,7 +17,15 @@ async function listarEmpresas(req, res) {
     select: {
       id: true, ruc: true, nombre: true, email: true,
       plan: true, trialVence: true, activa: true, creadoEn: true,
+      paypalSubscriptionId: true,
       _count: { select: { usuarios: true } },
+      usuarios: {
+        select: {
+          id: true, nombre: true, email: true, activo: true, ultimoAcceso: true,
+          rol: { select: { nombre: true } },
+        },
+        orderBy: { creadoEn: 'asc' },
+      },
     },
     orderBy: { creadoEn: 'desc' },
   });
@@ -68,4 +76,42 @@ async function extenderTrial(req, res) {
   }
 }
 
-module.exports = { listarEmpresas, extenderTrial };
+// PATCH /api/admin/empresas/:id/plan
+// Activa/cambia el plan de una empresa manualmente (útil para clientes Fundador
+// o cortesías). Si el plan no es TRIAL, quita el vencimiento de prueba y la activa.
+const PLANES_VALIDOS = ['TRIAL', 'EMPRENDE', 'BASICO', 'PROFESIONAL', 'DESPACHO', 'ENTERPRISE'];
+
+async function cambiarPlan(req, res) {
+  if (!verificarAdminKey(req, res)) return;
+
+  const id   = parseInt(req.params.id);
+  const plan = req.body.plan?.toUpperCase();
+
+  if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+  if (!PLANES_VALIDOS.includes(plan)) {
+    return res.status(400).json({ error: `Plan inválido. Usa: ${PLANES_VALIDOS.join(', ')}` });
+  }
+
+  try {
+    const empresa = await prisma.empresa.findUnique({ where: { id } });
+    if (!empresa) return res.status(404).json({ error: 'Empresa no encontrada' });
+
+    const actualizada = await prisma.empresa.update({
+      where: { id },
+      data: {
+        plan,
+        activa: true,
+        // Un plan pagado no tiene vencimiento de prueba.
+        ...(plan !== 'TRIAL' && { trialVence: null }),
+      },
+      select: { id: true, nombre: true, plan: true, trialVence: true, activa: true },
+    });
+
+    return res.json({ mensaje: `Plan cambiado a ${plan}`, empresa: actualizada });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error al cambiar el plan' });
+  }
+}
+
+module.exports = { listarEmpresas, extenderTrial, cambiarPlan };

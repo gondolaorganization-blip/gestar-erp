@@ -23,6 +23,7 @@ import ResetPasswordPage from '../pages/ResetPasswordPage';
 import TerminosPage from '../pages/TerminosPage';
 import PrivacidadPage from '../pages/PrivacidadPage';
 import TrialVencidoPage from '../pages/TrialVencidoPage';
+import SuperAdminPage from '../pages/SuperAdminPage';
 import ProtectedRoute from './ProtectedRoute';
 
 const P = (Page) => <ProtectedRoute><Page /></ProtectedRoute>;
@@ -51,5 +52,6 @@ export const router = createBrowserRouter([
   { path: '/configuracion',        element: P(ConfiguracionPage) },
   { path: '/importacion-bancaria', element: P(ImportacionBancariaPage) },
   { path: '/trial-vencido',        element: <TrialVencidoPage /> },
+  { path: '/super-admin',          element: <SuperAdminPage /> },
   { path: '*',                     element: <NotFoundPage /> },
 ]);
