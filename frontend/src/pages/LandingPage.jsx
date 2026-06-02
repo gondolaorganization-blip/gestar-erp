@@ -115,7 +115,7 @@ const TESTIMONIALS = [
 const FAQS = [
   { q: "¿Está conectado a la DGI de Panamá?", a: "La integración directa con la DGI para facturación electrónica con CAE/CUFE está en desarrollo y próximamente disponible. Actualmente puedes emitir y gestionar tus facturas dentro del sistema y exportarlas para su presentación." },
   { q: "¿Hay un período de prueba gratuito?", a: "Sí. Todos los planes incluyen 14 días de prueba gratuita sin necesidad de tarjeta de crédito. Al finalizar el período puedes elegir tu plan o contactarnos." },
-  { q: "¿Cómo funcionan los pagos?", a: "Aceptamos tarjeta de crédito/débito (Visa, Mastercard), Yappy y transferencia bancaria. Con el pago anual obtienes 2 meses gratis. Los precios no incluyen ITBMS (7%)." },
+  { q: "¿Cómo funcionan los pagos?", a: "Aceptamos tarjeta de crédito/débito (Visa, Mastercard), Yappy y transferencia bancaria. Con el pago anual obtienes 2 meses gratis. Los precios mostrados son finales (ITBMS incluido)." },
   { q: "¿Hay contrato de permanencia?", a: "No. Todos los planes son mes a mes. Puedes cancelar cuando quieras sin penalidad. El plan anual se cobra por adelantado." },
   { q: "¿Mis datos están seguros?", a: "Sí. Servidores en AWS con encriptación AES-256, backups diarios automáticos, 2FA disponible y auditoría completa de accesos." },
   { q: "¿Funciona para múltiples empresas?", a: "El plan Despacho soporta hasta 5 empresas y el Enterprise es ilimitado. Ideal para despachos contables o grupos empresariales." },

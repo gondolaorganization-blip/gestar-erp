@@ -22,7 +22,7 @@ const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
 // COBRAR_ITBMS = true  → el cliente paga el precio base + 7% (no te comes el ITBMS).
 // COBRAR_ITBMS = false → el precio base ya incluye el ITBMS (sale de tu margen).
 const ITBMS         = 0.07;
-const COBRAR_ITBMS  = true;
+const COBRAR_ITBMS  = false;   // por ahora ITBMS incluido en el precio. Cambiar a true para cobrar base + 7%.
 
 // Precio que realmente se cobra en PayPal, con 2 decimales.
 const cobrar = (base) => (COBRAR_ITBMS ? base * (1 + ITBMS) : base).toFixed(2);
