@@ -18,7 +18,7 @@ app.use((req, res, next) => {
   const origen = process.env.CORS_ORIGIN || '*';
   res.setHeader('Access-Control-Allow-Origin', origen);
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-admin-key');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
