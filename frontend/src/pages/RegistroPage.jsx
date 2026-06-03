@@ -144,7 +144,8 @@ function PasoUsuario({ data, onChange, onBack, onSubmit, loading }) {
 
 // ── Step 3 — éxito ────────────────────────────────────────────────────────────
 
-function PasoExito({ empresaNombre, navigate }) {
+function PasoExito({ empresaNombre, navigate, planParam }) {
+  const esFundador = planParam && planParam.toLowerCase().startsWith("fundador");
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{
@@ -157,14 +158,34 @@ function PasoExito({ empresaNombre, navigate }) {
         ¡Bienvenido a GESTAR!
       </h2>
       <p style={{ fontSize: 13, color: "#6B7A99", marginBottom: 4 }}>
-        Tu empresa <strong style={{ color: "#E8EDFF" }}>{empresaNombre}</strong> ya está configurada.
+        Tu empresa <strong style={{ color: "#E8EDFF" }}>{empresaNombre}</strong> ya está configurada con 14 días de prueba.
       </p>
       <p style={{ fontSize: 12, color: "#4B5675", marginBottom: 28 }}>
-        Tu próximo paso es configurar el Plan de Cuentas en Contabilidad.
+        {esFundador
+          ? "Activa tu precio fundador de por vida ahora para asegurarlo."
+          : "Tu próximo paso es configurar el Plan de Cuentas en Contabilidad."}
       </p>
-      <button className="reg-btn" onClick={() => navigate("/dashboard")}>
-        Ir al dashboard →
-      </button>
+      {planParam ? (
+        <>
+          <button
+            className="reg-btn"
+            onClick={() => navigate(`/trial-vencido?plan=${planParam.toUpperCase().replace(/-/g, "_")}`)}
+          >
+            {esFundador ? "Activar mi precio fundador 🔥" : "Activar mi plan →"}
+          </button>
+          <button
+            className="reg-btn-sec"
+            style={{ width: "100%", marginTop: 10 }}
+            onClick={() => navigate("/dashboard")}
+          >
+            Explorar primero (lo haré luego)
+          </button>
+        </>
+      ) : (
+        <button className="reg-btn" onClick={() => navigate("/dashboard")}>
+          Ir al dashboard →
+        </button>
+      )}
     </div>
   );
 }
@@ -328,7 +349,7 @@ export default function RegistroPage() {
             </h1>
             {planParam && step === 0 && (
               <p style={{ textAlign: "center", fontSize: 11, color: "#00C896", marginBottom: 16 }}>
-                Plan seleccionado: <strong>{planParam.toUpperCase()}</strong>
+                Plan seleccionado: <strong>{planParam.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</strong>
               </p>
             )}
             <p style={{ fontSize: 11, color: "#4B5675", textAlign: "center", marginBottom: 24 }}>
@@ -358,7 +379,7 @@ export default function RegistroPage() {
         )}
 
         {step === 2 && (
-          <PasoExito empresaNombre={empresaCreada} navigate={navigate} />
+          <PasoExito empresaNombre={empresaCreada} navigate={navigate} planParam={planParam} />
         )}
 
         {step < 2 && (

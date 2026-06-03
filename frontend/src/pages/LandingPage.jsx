@@ -97,6 +97,28 @@ const PLANS = [
   },
 ];
 
+// Planes Fundador: precio congelado de por vida, oferta limitada. Mismo acceso que su tier base.
+const FOUNDER_PLANS = [
+  {
+    id: "fundador-despacho",
+    tier: "despacho",
+    name: "Despacho Fundador",
+    price: 59.99,
+    regular: 74.99,
+    color: "#F5A623",
+    desc: "Multiempresa para contadores y firmas",
+  },
+  {
+    id: "fundador-enterprise",
+    tier: "enterprise",
+    name: "Enterprise Fundador",
+    price: 74.99,
+    regular: 89.99,
+    color: "#E879F9",
+    desc: "Para grupos empresariales y revendedores",
+  },
+].map((f) => ({ ...f, features: PLANS.find((p) => p.id === f.tier).features }));
+
 const FEATURES = [
   { icon: "◈", title: "Facturación Electrónica DGI", desc: "Emite facturas en PDF, envíalas por email y lleva control de cobros. Integración DGI/CAE próximamente.", pronto: true },
   { icon: "≡", title: "Contabilidad Panameña", desc: "Catálogo de cuentas local, asientos automáticos, balance general y estado de resultados con un clic." },
@@ -119,7 +141,7 @@ const FAQS = [
   { q: "¿Cómo funcionan los pagos?", a: "Aceptamos tarjeta de crédito/débito (Visa, Mastercard), Yappy y transferencia bancaria. Con el pago anual obtienes 2 meses gratis. Los precios mostrados son finales (ITBMS incluido)." },
   { q: "¿Hay contrato de permanencia?", a: "No. Todos los planes son mes a mes. Puedes cancelar cuando quieras sin penalidad. El plan anual se cobra por adelantado." },
   { q: "¿Mis datos están seguros?", a: "Sí. Servidores en AWS con encriptación AES-256, backups diarios automáticos, 2FA disponible y auditoría completa de accesos." },
-  { q: "¿Funciona para múltiples empresas?", a: "El plan Despacho soporta hasta 5 empresas y el Enterprise es ilimitado. Ideal para despachos contables o grupos empresariales." },
+  { q: "¿Funciona para múltiples empresas?", a: "El plan Despacho soporta hasta 10 empresas y el Enterprise es ilimitado. Ideal para despachos contables o grupos empresariales." },
 ];
 
 function CheckIcon({ color }) {
@@ -471,6 +493,61 @@ export default function GestarERPLanding() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* PLANES FUNDADORES */}
+          <div style={{ marginTop: 64 }}>
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <div style={{ display: "inline-block", background: "rgba(245,166,35,0.12)", color: "#F5A623", fontSize: 12, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", padding: "5px 14px", borderRadius: 20, marginBottom: 14 }}>🔥 Oferta Fundador · Cupos limitados</div>
+              <h3 style={{ fontSize: 28, fontWeight: 900, color: "#fff", letterSpacing: "-0.02em", marginBottom: 10 }}>
+                Precio congelado <span style={{ color: "#F5A623" }}>de por vida</span>
+              </h3>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 560, margin: "0 auto" }}>
+                Para quienes nos acompañan desde el inicio: asegura hoy tu plan a precio fundador y consérvalo para siempre, sin importar futuros aumentos.
+              </p>
+            </div>
+
+            <div className="lp-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16, maxWidth: 760, margin: "0 auto", alignItems: "start" }}>
+              {FOUNDER_PLANS.map(plan => (
+                <div key={plan.id} className="plan-card" style={{
+                  background: "rgba(245,166,35,0.06)",
+                  border: "2px solid rgba(245,166,35,0.5)",
+                  borderRadius: 16, padding: "28px 24px", position: "relative",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: plan.color }} />
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "0.06em" }}>{plan.name}</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>{plan.desc}</p>
+
+                  <div style={{ marginBottom: 6, display: "flex", alignItems: "flex-end", gap: 8 }}>
+                    <span style={{ fontSize: 38, fontWeight: 900, color: "#fff", fontFamily: "'DM Mono', monospace", letterSpacing: "-0.03em" }}>B/. {plan.price}</span>
+                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>/mes</span>
+                    <span style={{ fontSize: 15, color: "rgba(255,255,255,0.3)", textDecoration: "line-through", marginBottom: 9 }}>B/. {plan.regular}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#F5A623", fontWeight: 800, marginBottom: 18, letterSpacing: "0.04em" }}>
+                    ✓ Precio de por vida · Incluye 14 días gratis
+                  </div>
+
+                  <button
+                    className="btn-primary"
+                    onClick={() => navigate(`/registro?plan=${plan.id}`)}
+                    style={{ width: "100%", marginBottom: 22, fontSize: 13, background: "#F5A623", boxShadow: "0 4px 20px rgba(245,166,35,0.3)", color: "#0D1B2A" }}
+                  >
+                    Asegurar precio fundador
+                  </button>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                    {plan.features.map(f => (
+                      <div key={f} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <CheckIcon color={plan.color} />
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.4 }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={{ textAlign: "center", marginTop: 40 }}>

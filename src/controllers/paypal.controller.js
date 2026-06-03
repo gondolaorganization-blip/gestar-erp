@@ -68,7 +68,18 @@ async function getPlanes(req, res) {
     paypalPlanId:      PLAN_IDS[p.nombre].mensual(),
     paypalPlanIdAnual: PLAN_IDS[p.nombre].anual(),
   }));
-  res.json({ ok: true, data: planes });
+  // Planes Fundador: precio de por vida, mismo acceso que su tier base. No tienen anual.
+  const fundadores = Object.entries(FUNDADORES).map(([nombre, f]) => ({
+    nombre,                                       // FUNDADOR_DESPACHO / FUNDADOR_ENTERPRISE
+    label:         `${PLANES[f.tier].label} Fundador`,
+    precio:        f.precio,
+    precioRegular: PLANES[f.tier].precio,
+    tier:          f.tier,
+    fundador:      true,
+    paypalPlanId:      f.id(),
+    paypalPlanIdAnual: null,
+  }));
+  res.json({ ok: true, data: [...planes, ...fundadores] });
 }
 
 async function activarSuscripcion(req, res) {

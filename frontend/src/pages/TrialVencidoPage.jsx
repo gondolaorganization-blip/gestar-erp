@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import api from "../services/api";
 
@@ -8,11 +9,14 @@ const FEATURES = {
   PROFESIONAL: ["Todo lo de Básico", "Inventario", "Nómina Panamá", "CRM", "5 usuarios", "Asistente IA", "Soporte prioritario"],
   DESPACHO:    ["Todo lo de Profesional", "Multiempresa (hasta 10)", "Usuarios ilimitados", "Roles avanzados", "Soporte dedicado"],
   ENTERPRISE:  ["Todo lo de Despacho", "Empresas ilimitadas", "White label", "API access", "Soporte 24/7"],
+  FUNDADOR_DESPACHO:   ["Acceso completo al plan Despacho", "Multiempresa (hasta 10)", "Usuarios ilimitados", "Precio congelado de por vida"],
+  FUNDADOR_ENTERPRISE: ["Acceso completo al plan Enterprise", "Empresas ilimitadas", "White label + API", "Precio congelado de por vida"],
 };
 
 export default function TrialVencidoPage() {
+  const [searchParams] = useSearchParams();
   const [planes, setPlanes] = useState([]);
-  const [planSeleccionado, setPlanSeleccionado] = useState("PROFESIONAL");
+  const [planSeleccionado, setPlanSeleccionado] = useState(searchParams.get("plan") || "PROFESIONAL");
   const [exito, setExito] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -73,12 +77,18 @@ export default function TrialVencidoPage() {
                     padding: "20px 16px", transition: "all 0.2s",
                   }}
                 >
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "#00C896", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-                    {plan.label}
+                  <p style={{ fontSize: 11, fontWeight: 700, color: plan.fundador ? "#F5A623" : "#00C896", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+                    {plan.fundador ? "🔥 " : ""}{plan.label}
                   </p>
                   <p style={{ fontSize: 26, fontWeight: 900, color: "#fff", marginBottom: 2 }}>
+                    {plan.fundador && plan.precioRegular && (
+                      <span style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.35)", textDecoration: "line-through", marginRight: 6 }}>B/.{plan.precioRegular}</span>
+                    )}
                     B/.{plan.precio}<span style={{ fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.4)" }}>/mes</span>
                   </p>
+                  {plan.fundador && (
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "#F5A623", letterSpacing: "0.04em", marginBottom: 2 }}>Precio de por vida</p>
+                  )}
                   <ul style={{ listStyle: "none", padding: 0, margin: "10px 0 0" }}>
                     {(FEATURES[plan.nombre] || []).map((f) => (
                       <li key={f} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>✓ {f}</li>
